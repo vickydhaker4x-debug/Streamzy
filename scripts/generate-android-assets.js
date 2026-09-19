@@ -3,7 +3,7 @@ import path from 'path';
 import sharp from 'sharp';
 
 const ROOT_DIR = process.cwd();
-const LOGO_PATH = path.join(ROOT_DIR, 'public', 'vd_music_logo.jpg');
+const LOGO_PATH = path.join(ROOT_DIR, 'public', 'streamzy_logo.jpg');
 const RES_DIR = path.join(ROOT_DIR, 'android', 'app', 'src', 'main', 'res');
 
 async function ensureDir(dirPath) {
@@ -21,7 +21,7 @@ async function createCircularMask(size) {
 }
 
 async function generateWebAndPWAAssets() {
-  console.log('Generating Web & PWA assets from vd_music_logo.jpg...');
+  console.log('Generating Web & PWA assets from streamzy_logo.jpg...');
   const publicDir = path.join(ROOT_DIR, 'public');
 
   // 192x192

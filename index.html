@@ -28,18 +28,18 @@
     <div id="root"></div>
 
     <!-- High-Performance Animated Initial Boot Splash (Pre-React) -->
-    <div id="vd-boot-splash" style="position: fixed; inset: 0; background-color: #131317; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; z-index: 99999; transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none;">
+    <div id="streamzy-boot-splash" style="position: fixed; inset: 0; background-color: #131317; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; z-index: 99999; transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none;">
       <!-- Ambient Glow -->
-      <div style="position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(248,113,113,0.3) 0%, rgba(251,146,60,0.1) 45%, transparent 70%); filter: blur(32px); animation: vdGlow 2.5s infinite ease-in-out;"></div>
+      <div style="position: absolute; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(248,113,113,0.3) 0%, rgba(251,146,60,0.1) 45%, transparent 70%); filter: blur(32px); animation: streamzyGlow 2.5s infinite ease-in-out;"></div>
 
       <!-- Animated Logo Wrapper -->
       <div style="position: relative; display: flex; align-items: center; justify-content: center;">
         <!-- Pulsing Acoustic Rings -->
-        <div style="position: absolute; width: 90px; height: 90px; border-radius: 28px; border: 1.5px solid rgba(248,113,113,0.5); animation: vdPulseRing 2s infinite ease-out;"></div>
-        <div style="position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 1px solid rgba(251,146,60,0.35); animation: vdPulseRing 2s infinite ease-out 0.65s;"></div>
+        <div style="position: absolute; width: 90px; height: 90px; border-radius: 28px; border: 1.5px solid rgba(248,113,113,0.5); animation: streamzyPulseRing 2s infinite ease-out;"></div>
+        <div style="position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 1px solid rgba(251,146,60,0.35); animation: streamzyPulseRing 2s infinite ease-out 0.65s;"></div>
 
         <!-- Breathing Logo -->
-        <div style="position: relative; width: 96px; height: 96px; border-radius: 26px; padding: 2px; background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(248,113,113,0.4), rgba(255,255,255,0.05)); animation: vdLogoBreath 2.4s infinite ease-in-out; box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
+        <div style="position: relative; width: 96px; height: 96px; border-radius: 26px; padding: 2px; background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(248,113,113,0.4), rgba(255,255,255,0.05)); animation: streamzyLogoBreath 2.4s infinite ease-in-out; box-shadow: 0 16px 40px rgba(0,0,0,0.8);">
           <img src="/streamzy_logo.jpg" alt="Streamzy" style="width: 100%; height: 100%; border-radius: 24px; object-fit: cover; display: block;" />
         </div>
       </div>
@@ -52,27 +52,27 @@
 
       <!-- Equalizer Visualizer Bars -->
       <div style="display: flex; align-items: flex-end; gap: 5px; height: 26px; margin-top: 10px; z-index: 10;">
-        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: vdEqBar 0.8s infinite ease-in-out alternate;"></div>
-        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: vdEqBar 1.1s infinite ease-in-out alternate 0.15s;"></div>
-        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: vdEqBar 0.7s infinite ease-in-out alternate 0.3s;"></div>
-        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: vdEqBar 1.2s infinite ease-in-out alternate 0.1s;"></div>
-        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: vdEqBar 0.9s infinite ease-in-out alternate 0.25s;"></div>
+        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: streamzyEqBar 0.8s infinite ease-in-out alternate;"></div>
+        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: streamzyEqBar 1.1s infinite ease-in-out alternate 0.15s;"></div>
+        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: streamzyEqBar 0.7s infinite ease-in-out alternate 0.3s;"></div>
+        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: streamzyEqBar 1.2s infinite ease-in-out alternate 0.1s;"></div>
+        <div style="width: 4px; border-radius: 99px; background: linear-gradient(180deg, #fb923c, #f87171); animation: streamzyEqBar 0.9s infinite ease-in-out alternate 0.25s;"></div>
       </div>
 
       <style>
-        @keyframes vdGlow {
+        @keyframes streamzyGlow {
           0%, 100% { opacity: 0.3; transform: scale(0.92); }
           50% { opacity: 0.6; transform: scale(1.15); }
         }
-        @keyframes vdPulseRing {
+        @keyframes streamzyPulseRing {
           0% { transform: scale(0.9); opacity: 0.7; }
           100% { transform: scale(1.85); opacity: 0; }
         }
-        @keyframes vdLogoBreath {
+        @keyframes streamzyLogoBreath {
           0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px rgba(248,113,113,0.3)); }
           50% { transform: scale(1.06); filter: drop-shadow(0 0 32px rgba(248,113,113,0.55)); }
         }
-        @keyframes vdEqBar {
+        @keyframes streamzyEqBar {
           0% { height: 6px; opacity: 0.5; }
           100% { height: 26px; opacity: 1; }
         }
@@ -80,8 +80,8 @@
     </div>
 
     <script>
-      window.dismissVdBootSplash = function() {
-        var splash = document.getElementById('vd-boot-splash');
+      window.dismissStreamzyBootSplash = function() {
+        var splash = document.getElementById('streamzy-boot-splash');
         if (splash) {
           splash.style.opacity = '0';
           splash.style.transform = 'scale(1.04)';

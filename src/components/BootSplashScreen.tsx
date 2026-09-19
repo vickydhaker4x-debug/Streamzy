@@ -10,8 +10,8 @@ export const BootSplashScreen: React.FC<BootSplashScreenProps> = ({ onComplete }
 
   useEffect(() => {
     // Dismiss HTML-level splash immediately since React has mounted
-    if (typeof window !== 'undefined' && (window as any).dismissVdBootSplash) {
-      (window as any).dismissVdBootSplash();
+    if (typeof window !== 'undefined' && (window as any).dismissStreamzyBootSplash) {
+      (window as any).dismissStreamzyBootSplash();
     }
 
     const t1 = setTimeout(() => {
@@ -32,7 +32,7 @@ export const BootSplashScreen: React.FC<BootSplashScreenProps> = ({ onComplete }
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          id="vd-react-boot-splash"
+          id="streamzy-react-boot-splash"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
