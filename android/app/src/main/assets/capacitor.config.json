@@ -1,0 +1,8 @@
+{
+	"appId": "com.vdmusic.player",
+	"appName": "VD Music",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	}
+}

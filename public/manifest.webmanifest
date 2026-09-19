@@ -1,0 +1,41 @@
+{
+  "id": "/",
+  "name": "VD Music - Audiophile Player",
+  "short_name": "VD Music",
+  "description": "An open-source, ad-free streaming music client inspired by ViMusic and OpenTune with pure OLED dark theme and hardware equalizer.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#131317",
+  "theme_color": "#131317",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    {
+      "src": "/vd_music_logo.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+[
+  {
+    "userId": "default_user",
+    "userName": "Music Enthusiast",
+    "likedTrackIds": [
+      "track-sauda-iss-dil-ka",
+      "track-preet-re",
+      "track-kesariya",
+      "track-starboy"
+    ],
+    "playlists": [
+      {
+        "id": "pl-favorites-vibe",
+        "name": "Daily Melodic Heavy Rotation",
+        "description": "Continuously synced cloud playlist featuring heavy repeats & morning favorites",
+        "createdAt": 1789191612306,
+        "updatedAt": 1789616412306,
+        "trackIds": [
+          "track-sauda-iss-dil-ka",
+          "track-preet-re",
+          "track-kesariya",
+          "track-chaleya"
+        ]
+      },
+      {
+        "id": "pl-night-chill",
+        "name": "Midnight Chillout & Lo-Fi",
+        "description": "Late night soothing tunes and lo-fi melodies",
+        "createdAt": 1788759612306,
+        "updatedAt": 1789558812306,
+        "trackIds": [
+          "track-lofi-lovee",
+          "track-kinna-sohna",
+          "track-starboy"
+        ]
+      }
+    ],
+    "upNextQueue": {
+      "currentTrackId": "track-sauda-iss-dil-ka",
+      "queueTrackIds": [
+        "track-preet-re",
+        "track-lofi-lovee",
+        "track-kinna-sohna"
+      ],
+      "isPlaying": false,
+      "progressSec": 0,
+      "updatedAt": 1789623612306,
+      "updatedByDeviceId": "phone-android"
+    },
+    "library": {
+      "savedAlbumIds": [
+        "alb-sharma ji ki shaadi",
+        "alb-dhadak 2"
+      ],
+      "savedArtistIds": [
+        "Arijit Singh",
+        "Darshan Raval"
+      ],
+      "customTrackIds": []
+    },
+    "playbackEvents": [
+      {
+        "trackId": "track-sauda-iss-dil-ka",
+        "timestamp": 1789612812306,
+        "loopCount": 3,
+        "timeOfDay": "morning",
+        "hour": 8,
+        "deviceId": "phone-android"
+      },
+      {
+        "trackId": "track-lofi-lovee",
+        "timestamp": 1789558812306,
+        "loopCount": 2,
+        "timeOfDay": "night",
+        "hour": 23,
+        "deviceId": "phone-android"
+      },
+      {
+        "trackId": "track-preet-re",
+        "timestamp": 1789537212306,
+        "loopCount": 4,
+        "timeOfDay": "evening",
+        "hour": 19,
+        "deviceId": "web-browser"
+      },
+      {
+        "trackId": "track-kinna-sohna",
+        "timestamp": 1789450812306,
+        "loopCount": 1,
+        "timeOfDay": "morning",
+        "hour": 9,
+        "deviceId": "phone-android"
+      },
+      {
+        "trackId": "track-kesariya",
+        "timestamp": 1789364412306,
+        "loopCount": 5,
+        "timeOfDay": "morning",
+        "hour": 7,
+        "deviceId": "phone-android"
+      },
+      {
+        "trackId": "track-chaleya",
+        "timestamp": 1789278012306,
+        "loopCount": 2,
+        "timeOfDay": "afternoon",
+        "hour": 14,
+        "deviceId": "web-browser"
+      },
+      {
+        "trackId": "track-295",
+        "timestamp": 1789191612306,
+        "loopCount": 6,
+        "timeOfDay": "afternoon",
+        "hour": 16,
+        "deviceId": "phone-android"
+      },
+      {
+        "trackId": "track-brown-munde",
+        "timestamp": 1789105212306,
+        "loopCount": 3,
+        "timeOfDay": "evening",
+        "hour": 20,
+        "deviceId": "phone-android"
+      },
+      {
+        "trackId": "track-starboy",
+        "timestamp": 1789450812306,
+        "loopCount": 4,
+        "timeOfDay": "night",
+        "hour": 22,
+        "deviceId": "web-browser"
+      },
+      {
+        "trackId": "track-softly",
+        "timestamp": 1789594812306,
+        "loopCount": 2,
+        "timeOfDay": "afternoon",
+        "hour": 15,
+        "deviceId": "phone-android"
+      }
+    ],
+    "devices": [
+      {
+        "deviceId": "phone-android",
+        "deviceName": "Pixel 8 Pro (Mobile)",
+        "lastActiveAt": 1789623012306,
+        "platform": "mobile"
+      },
+      {
+        "deviceId": "web-browser",
+        "deviceName": "Chrome Web Client",
+        "lastActiveAt": 1789623612306,
+        "platform": "desktop"
+      },
+      {
+        "deviceId": "dev-xttrufh-mu48ei9f",
+        "deviceName": "Desktop Web Client",
+        "lastActiveAt": 1789626327718,
+        "platform": "web"
+      },
+      {
+        "deviceId": "dev-x6iksn2-mu553958",
+        "deviceName": "Desktop Web Client",
+        "lastActiveAt": 1789626327576,
+        "platform": "web"
+      }
+    ],
+    "lastSyncedAt": 1789626327718
+  }
+]

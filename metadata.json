@@ -1,0 +1,8 @@
+{
+  "name": "Streamzy",
+  "description": "High-fidelity music streaming client featuring modular stream plugins, offline vault caching, 10-band DSP equalizer, and real-time synchronized lyrics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
