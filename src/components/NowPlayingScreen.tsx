@@ -8,7 +8,6 @@ import { lyricsService } from '../services/lyricsService';
 import { offlineService } from '../services/offlineService';
 import { personalizationService } from '../services/personalizationService';
 import { QueueDrawer } from './QueueDrawer';
-import { EqualizerModal } from './EqualizerModal';
 import { FullscreenLyricsModal } from './FullscreenLyricsModal';
 
 interface NowPlayingScreenProps {
@@ -80,7 +79,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
   const [showQueue, setShowQueue] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showSleepModal, setShowSleepModal] = useState(false);
-  const [showEqSubModal, setShowEqSubModal] = useState(false);
   const [, setOfflineTick] = useState(0);
 
   useEffect(() => {
@@ -711,22 +709,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
         onSeek={onSeek}
       />
 
-      {/* 10-Band DSP Equalizer Modal */}
-      <EqualizerModal
-        isOpen={showEqSubModal}
-        onClose={() => setShowEqSubModal(false)}
-        currentPreset={settings.equalizerPreset}
-        onPresetChange={(preset, bands) => {
-          onUpdateSettings({ equalizerPreset: preset, equalizerBands: bands });
-          showToast(`Preset: ${preset}`);
-        }}
-        crossfadeSec={settings.crossfadeDurationSec || 3}
-        onCrossfadeChange={(sec) => {
-          onUpdateSettings({ crossfadeDurationSec: sec });
-          showToast(`Crossfade: ${sec}s`);
-        }}
-      />
-
       {/* B. Sleep Timer Modal */}
       {showSleepModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex flex-col justify-end animate-in fade-in duration-200">
@@ -903,49 +885,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
                   <span className="text-[11px] text-white/60">Copy song link or share with friends</span>
                 </div>
               </button>
-
-              {/* Equalizer Sound Presets */}
-              <div className="p-3 rounded-2xl bg-white/5 flex flex-col gap-2">
-                <div
-                  onClick={() => setShowEqSubModal(!showEqSubModal)}
-                  className="flex items-center justify-between cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white shrink-0">
-                      <span className="material-symbols-outlined floating-icon text-[20px]">graphic_eq</span>
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[14px] font-semibold text-white">Audio Equalizer</span>
-                      <span className="text-[11px] text-white/70">{settings.equalizerPreset}</span>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined floating-icon text-[20px] text-white/60">
-                    {showEqSubModal ? 'expand_less' : 'expand_more'}
-                  </span>
-                </div>
-
-                {showEqSubModal && (
-                  <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-white/10">
-                    {eqPresets.map((preset) => (
-                      <button
-                        key={preset}
-                        onClick={() => {
-                          onUpdateSettings({ equalizerPreset: preset });
-                          setToastMessage(`Preset: ${preset}`);
-                          setTimeout(() => setToastMessage(null), 2000);
-                        }}
-                        className={`px-3 py-2 rounded-xl text-[12px] font-medium text-left truncate transition-colors ${
-                          settings.equalizerPreset === preset
-                            ? 'bg-white text-black font-bold'
-                            : 'bg-white/10 text-white/80 hover:bg-white/15'
-                        }`}
-                      >
-                        {preset}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Hi-Res Lossless Audio Badge */}
               <div className="p-3 rounded-2xl bg-white/5 flex items-center justify-between text-[12px]">

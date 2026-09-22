@@ -3,7 +3,6 @@ import { Track, Album, Artist, Playlist, MusicMix, SearchFilterCategory, Enriche
 import { TRACKS } from '../data/musicData';
 import { searchTracks, getAudioStreamUrl } from '../utils/pipedApi';
 import { TrackImage } from './TrackImage';
-import { SearchSuggestions } from './SearchSuggestions';
 import { searchEngine, normalizeSearchQuery } from '../services/searchEngine';
 import { deduplicateTracks } from '../services/musicNormalizationService';
 import { extractAlbums, extractArtists, EnrichedAlbum, EnrichedArtist } from '../services/libraryDataService';
@@ -49,7 +48,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
   const [isSearchingOnline, setIsSearchingOnline] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchToast, setSearchToast] = useState<string | null>(null);
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => {
     return new Set(offlineService.getAllDownloads().map((d) => d.trackId));
@@ -103,7 +101,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     setInputQuery(queryToSearch);
     setActiveQuery(queryToSearch);
     saveRecentSearch(queryToSearch);
-    setShowSuggestions(false);
   };
 
   // Real-time debounced query synchronization: guarantees live searching as the user types even for a single word
@@ -169,21 +166,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
       localStorage.removeItem('vd_recent_searches');
     } catch {}
   };
-
-  // Close suggestions on outside click
-  useEffect(() => {
-    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target as Node)
-      ) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, []);
 
   // Compute Contextual Local Search Results (Typo-tolerant + Lyrics + Categorized)
   const contextualResults = useMemo(() => {
@@ -562,194 +544,164 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     const isDownloaded = downloadedIds.has(track.id) || offlineService.isDownloaded(track.id);
     const isDownloading = downloadingIds.has(track.id) || offlineService.isDownloading(track.id);
     const isFav = favoriteTrackIds ? favoriteTrackIds.has(track.id) : (track.isFavorite || false);
-    const sourceBadge = getSourceBadge(track);
+    const movieName = track.album || (track as unknown as { movie?: string }).movie || 'Single';
+    const language = track.language || 'Hindi';
+    const genre = track.genre || 'Bollywood';
 
     return (
       <div
         key={track.id}
         onClick={() => handleTrackClick(track)}
-        className={`flex flex-col p-2.5 sm:p-3 rounded-2xl cursor-pointer transition-all border group ${
+        className={`flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl cursor-pointer transition-all border group ${
           isThisTrackActive
             ? 'bg-red-500/15 border-red-500/40 shadow-lg'
             : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.05]'
         }`}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-zinc-800 border border-white/10">
-              <TrackImage
-                src={track.coverUrl}
-                videoId={track.videoId}
-                alt={track.title}
-                className="w-full h-full object-cover"
-              />
-              {isThisTrackActive && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="material-symbols-outlined floating-icon text-red-500 text-[22px] animate-pulse">
-                    {isPlaying ? 'volume_up' : 'pause'}
-                  </span>
-                </div>
-              )}
-              {isLoadingThis && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <span className="material-symbols-outlined floating-icon text-red-500 text-[20px] animate-spin">
-                    progress_activity
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className={`text-[14px] font-bold truncate ${isThisTrackActive ? 'text-red-400' : 'text-white'}`}>
-                {track.title}
-              </span>
-              <div className="flex items-center gap-1.5 text-[12px] text-zinc-400 truncate mt-0.5">
-                <span className="truncate">{track.artist}</span>
-                {track.album && <span>•</span>}
-                <span className="truncate">{track.album}</span>
+        {/* Single Row: Cover + [Title -> Singer -> Movie Name -> Language -> Genre] */}
+        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+          {/* Thumbnail */}
+          <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden shrink-0 bg-zinc-800 border border-white/10">
+            <TrackImage
+              src={track.coverUrl}
+              videoId={track.videoId}
+              alt={track.title}
+              className="w-full h-full object-cover"
+            />
+            {isThisTrackActive && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <span className="material-symbols-outlined floating-icon text-red-500 text-[20px] animate-pulse">
+                  {isPlaying ? 'volume_up' : 'pause'}
+                </span>
               </div>
-            </div>
+            )}
+            {isLoadingThis && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <span className="material-symbols-outlined floating-icon text-red-500 text-[18px] animate-spin">
+                  progress_activity
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Source Engine Badge */}
-            <span className={`hidden sm:inline-flex text-[9px] font-semibold px-2 py-0.5 rounded-full border ${sourceBadge.color}`}>
-              {sourceBadge.label}
+          {/* Sequence: 1. Title -> 2. Singer -> 3. Movie Name -> 4. Language -> 5. Genre in a single continuous row */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden flex-wrap sm:flex-nowrap">
+            {/* 1. Song Title */}
+            <span className={`text-[13px] sm:text-[14px] font-bold truncate shrink-0 max-w-[200px] sm:max-w-[240px] ${
+              isThisTrackActive ? 'text-red-400' : 'text-white'
+            }`}>
+              {track.title}
             </span>
 
-            {/* Quality badge */}
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
-              {track.quality?.includes('320') ? '320k' : track.quality?.includes('FLAC') ? 'FLAC' : 'Hi-Res'}
+            <span className="text-zinc-500 hidden sm:inline">•</span>
+
+            {/* 2. Singer */}
+            <div className="flex items-center gap-1 text-[12px] text-zinc-300 truncate shrink-0 max-w-[140px] sm:max-w-[170px]" title={`Singer: ${track.artist}`}>
+              <span className="text-zinc-500 text-[11px] sm:hidden">By:</span>
+              <span className="truncate font-medium">{track.artist}</span>
+            </div>
+
+            <span className="text-zinc-500 hidden md:inline">•</span>
+
+            {/* 3. Movie Name / Album */}
+            <div className="hidden md:flex items-center gap-1 text-[12px] text-zinc-400 truncate shrink-0 max-w-[130px] lg:max-w-[160px]" title={`Movie / Album: ${movieName}`}>
+              <span className="truncate text-zinc-400">{movieName}</span>
+            </div>
+
+            <span className="text-zinc-500 hidden lg:inline">•</span>
+
+            {/* 4. Language */}
+            <span className="hidden lg:inline-flex text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 border border-white/10 shrink-0 capitalize" title={`Language: ${language}`}>
+              {language}
             </span>
 
-            <span className="text-[11px] text-zinc-400 font-mono hidden sm:inline">{track.duration}</span>
-
-            {/* 1-Click Download Button */}
-            <button
-              id={`search-download-btn-${track.id}`}
-              title={isDownloaded ? 'Downloaded in offline vault' : 'Download for offline listening'}
-              onClick={(e) => handleToggleDownload(track, e)}
-              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer ${
-                isDownloaded
-                  ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                  : isDownloading
-                  ? 'bg-amber-500/20 text-amber-300'
-                  : 'bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[18px] ${isDownloading ? 'animate-spin' : ''}`}>
-                {isDownloading ? 'progress_activity' : isDownloaded ? 'check_circle' : 'download'}
-              </span>
-            </button>
-
-            {/* Play Next Button */}
-            {onPlayNext && (
-              <button
-                title="Play Next"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayNext(track);
-                  setSearchToast(`"${track.title}" set to play next`);
-                  setTimeout(() => setSearchToast(null), 2000);
-                }}
-                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  playlist_play
-                </span>
-              </button>
-            )}
-
-            {/* Quick Add to Queue Button */}
-            {onAddToQueue && (
-              <button
-                title="Add to queue"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddToQueue(track);
-                  setSearchToast(`Added "${track.title}" to Up Next`);
-                  setTimeout(() => setSearchToast(null), 2000);
-                }}
-                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  playlist_add
-                </span>
-              </button>
-            )}
-
-            {/* Favorite toggle */}
-            {onToggleFavorite && (
-              <button
-                title={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFavorite(track.id);
-                }}
-                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
-              >
-                <span 
-                  className="material-symbols-outlined text-[18px] text-[var(--color-primary)]"
-                  style={{ fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  {isFav ? 'favorite' : 'favorite_border'}
-                </span>
-              </button>
-            )}
+            {/* 5. Genre */}
+            <span className="hidden xl:inline-flex text-[11px] font-medium px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 shrink-0 capitalize" title={`Genre: ${genre}`}>
+              {genre}
+            </span>
           </div>
         </div>
 
-        {/* Lyric Snippet Highlight if matched in lyrics */}
-        {track.lyricMatch && (
-          <div className="mt-2 pt-2 border-t border-white/[0.06] flex items-center gap-2 text-[11px] text-amber-300/90 font-medium">
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold uppercase tracking-wider shrink-0">
-              Matched in Lyrics
+        {/* Action Buttons in single row */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <span className="text-[11px] text-zinc-400 font-mono hidden sm:inline">{track.duration}</span>
+
+          {/* 1-Click Download Button */}
+          <button
+            id={`search-download-btn-${track.id}`}
+            title={isDownloaded ? 'Downloaded in offline vault' : 'Download for offline listening'}
+            onClick={(e) => handleToggleDownload(track, e)}
+            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer ${
+              isDownloaded
+                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                : isDownloading
+                ? 'bg-amber-500/20 text-amber-300'
+                : 'bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-[18px] ${isDownloading ? 'animate-spin' : ''}`}>
+              {isDownloading ? 'progress_activity' : isDownloaded ? 'check_circle' : 'download'}
             </span>
-            <span className="italic truncate">
-              &quot;{track.lyricMatch.matchedLine}&quot;
-            </span>
-          </div>
-        )}
+          </button>
+
+          {/* Play Next Button */}
+          {onPlayNext && (
+            <button
+              title="Play Next"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlayNext(track);
+                setSearchToast(`"${track.title}" set to play next`);
+                setTimeout(() => setSearchToast(null), 2000);
+              }}
+              className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                playlist_play
+              </span>
+            </button>
+          )}
+
+          {/* Quick Add to Queue Button */}
+          {onAddToQueue && (
+            <button
+              title="Add to queue"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToQueue(track);
+                setSearchToast(`Added "${track.title}" to Up Next`);
+                setTimeout(() => setSearchToast(null), 2000);
+              }}
+              className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                playlist_add
+              </span>
+            </button>
+          )}
+
+          {/* Favorite toggle */}
+          {onToggleFavorite && (
+            <button
+              title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(track.id);
+              }}
+              className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
+            >
+              <span 
+                className="material-symbols-outlined text-[18px] text-[var(--color-primary)]"
+                style={{ fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                {isFav ? 'favorite' : 'favorite_border'}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
     );
   };
-
-  // Related search phrases for the search word
-  const relatedSearchPhrases = useMemo(() => {
-    const q = activeQuery.trim();
-    if (!q) return [];
-    return [
-      `${q} song`,
-      `${q} remix`,
-      `${q} lofi`,
-      `${q} lyrics`,
-      `${q} slowed & reverb`,
-      `${q} acoustic`,
-      `${q} hits`
-    ];
-  }, [activeQuery]);
-
-  // Songs specifically related to the search word
-  const relatedSongsForSearchWord = useMemo(() => {
-    const q = activeQuery.trim();
-    if (!q) return [];
-    const norm = normalizeSearchQuery(q);
-    const combined = [...liveOnlineResults, ...contextualResults.songs, ...TRACKS];
-    const unique = deduplicateTracks(combined);
-    return unique
-      .filter((t) => {
-        const titleNorm = normalizeSearchQuery(t.title);
-        const artistNorm = normalizeSearchQuery(t.artist);
-        const genreNorm = normalizeSearchQuery(t.genre || '');
-        return (
-          titleNorm.includes(norm) ||
-          artistNorm.includes(norm) ||
-          genreNorm.includes(norm) ||
-          titleNorm.split(' ').some((w) => w.startsWith(norm)) ||
-          artistNorm.split(' ').some((w) => w.startsWith(norm))
-        );
-      })
-      .slice(0, 6);
-  }, [activeQuery, liveOnlineResults, contextualResults.songs]);
 
   return (
     <div id="search-screen-view" className="flex flex-col w-full px-4 sm:px-6 gap-4 pb-28 max-w-4xl mx-auto animate-fade-in">
@@ -767,20 +719,16 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
             id="search-input-field"
             type="text"
             value={inputQuery}
-            onFocus={() => setShowSuggestions(true)}
             onChange={(e) => {
               setInputQuery(e.target.value);
-              setShowSuggestions(true);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 handleExecuteSearch();
-              } else if (e.key === 'Escape') {
-                setShowSuggestions(false);
               }
             }}
-            placeholder="Search songs, artists, albums, or lyrics (e.g. 'love storiyan')..."
+            placeholder="Search songs, artists, albums, movie names..."
             className="w-full bg-transparent text-[14px] text-white placeholder:text-zinc-500 focus:outline-none"
           />
           {inputQuery && (
@@ -790,7 +738,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                 setInputQuery('');
                 setActiveQuery('');
                 setLiveOnlineResults([]);
-                setShowSuggestions(true);
               }}
               className="text-zinc-400 hover:text-white p-1 cursor-pointer mr-1"
             >
@@ -809,47 +756,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
             <span className="material-symbols-outlined text-[17px]">search</span>
             <span className="hidden xs:inline sm:inline">Search</span>
           </button>
-        </div>
-
-        {/* Live Search Suggestions Dropdown */}
-        <div className="absolute top-full left-0 right-0 mt-2 z-40">
-          <SearchSuggestions
-            query={inputQuery}
-            isVisible={showSuggestions}
-            onSelectSong={(track) => {
-              handleTrackClick(track);
-              saveRecentSearch(track.title);
-              setShowSuggestions(false);
-            }}
-            onSelectArtist={(artist) => {
-              handleArtistClick(artist);
-              saveRecentSearch(artist.name);
-              setShowSuggestions(false);
-            }}
-            onSelectAlbum={(album) => {
-              handleAlbumClick(album);
-              saveRecentSearch(album.title);
-              setShowSuggestions(false);
-            }}
-            onSelectPlaylist={(playlist) => {
-              handlePlaylistClick(playlist);
-              saveRecentSearch('title' in playlist ? playlist.title : playlist.name);
-              setShowSuggestions(false);
-            }}
-            onSelectQuery={(q) => {
-              setInputQuery(q);
-              setActiveQuery(q);
-              saveRecentSearch(q);
-              setShowSuggestions(false);
-            }}
-            onInsertQuery={(q) => {
-              setInputQuery(q);
-              setShowSuggestions(true);
-            }}
-            recentSearches={recentSearches}
-            onRemoveRecentSearch={removeRecentSearch}
-            onClearRecentSearches={clearRecentSearches}
-          />
         </div>
       </div>
 
@@ -907,81 +813,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
             )}
           </div>
           <span>{totalResultsCount} items</span>
-        </div>
-      )}
-
-      {/* Related Suggestions & Songs for Search Word */}
-      {activeQuery.trim().length > 0 && (
-        <div className="flex flex-col gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] backdrop-blur-md shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#FE385E] text-[18px]">auto_awesome</span>
-              <span className="text-[13px] font-bold text-white">
-                Related to &ldquo;{activeQuery}&rdquo;
-              </span>
-            </div>
-            <span className="text-[11px] text-zinc-400">Suggestions</span>
-          </div>
-
-          {/* Related search query chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {relatedSearchPhrases.map((phrase) => (
-              <button
-                key={phrase}
-                type="button"
-                onClick={() => handleExecuteSearch(phrase)}
-                className="px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.14] text-zinc-300 hover:text-white text-[12px] font-medium border border-white/[0.08] transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 hover:-translate-y-0.5 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[14px] text-zinc-400">search</span>
-                <span>{phrase}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Related song cards for the search word */}
-          {relatedSongsForSearchWord.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-0.5">
-              {relatedSongsForSearchWord.slice(0, 4).map((track) => (
-                <div
-                  key={`rel-word-${track.id}`}
-                  onClick={() => handleTrackClick(track)}
-                  className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.04] transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-zinc-800">
-                      <img
-                        src={track.coverUrl || track.albumArt || '/streamzy_logo.jpg'}
-                        alt={track.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <span className="material-symbols-outlined text-white text-[20px]">play_arrow</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[13px] font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
-                        {track.title}
-                      </span>
-                      <span className="text-[11px] text-zinc-400 truncate">
-                        {track.artist}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleTrackClick(track);
-                    }}
-                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-[#FE385E] text-zinc-300 hover:text-white flex items-center justify-center transition-colors shrink-0"
-                    title="Play track"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 

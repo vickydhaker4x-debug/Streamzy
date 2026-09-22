@@ -1,6 +1,5 @@
 import React from 'react';
-import { SlidersHorizontal, Settings, Cloud } from 'lucide-react';
-import { OPENTUNE_LOGO_URL } from '../data/musicData';
+import { Settings, Cloud } from 'lucide-react';
 import { ActiveScreen } from '../types';
 
 interface HeaderProps {
@@ -8,7 +7,6 @@ interface HeaderProps {
   userName?: string;
   onOpenAccountSync: () => void;
   onOpenHistory?: () => void;
-  onOpenEqualizer: () => void;
   onOpenSettings?: () => void;
 }
 
@@ -17,7 +15,6 @@ export const Header: React.FC<HeaderProps> = ({
   userName,
   onOpenAccountSync,
   onOpenHistory: _onOpenHistory,
-  onOpenEqualizer,
   onOpenSettings
 }) => {
   const getScreenTitle = () => {
@@ -72,39 +69,29 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action icons */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Equalizer */}
+          {/* Settings */}
+          {onOpenSettings && (
             <button
-              id="header-eq-btn"
-              onClick={onOpenEqualizer}
-              className="w-9 h-9 rounded-xl bg-[#180E1B] hover:bg-[#2A162D] text-[#FE385E] flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer"
-              title="10-Band Equalizer"
+              id="header-settings-btn"
+              onClick={onOpenSettings}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer ${
+                activeScreen === 'settings'
+                  ? 'bg-[#FE385E] text-white'
+                  : 'bg-[#180E1B] hover:bg-[#2A162D] text-[#DAEAF7]'
+              }`}
+              title="App Settings"
             >
-              <SlidersHorizontal size={18} />
+              <Settings size={18} />
             </button>
+          )}
 
-            {/* Settings */}
-            {onOpenSettings && (
-              <button
-                id="header-settings-btn"
-                onClick={onOpenSettings}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer ${
-                  activeScreen === 'settings'
-                    ? 'bg-[#FE385E] text-white'
-                    : 'bg-[#180E1B] hover:bg-[#2A162D] text-[#DAEAF7]'
-                }`}
-                title="App Settings"
-              >
-                <Settings size={18} />
-              </button>
-            )}
-
-            {/* Account Profile / Sync Button */}
-            <button
-              id="header-account-btn"
-              aria-label="Account & Sync"
-              onClick={onOpenAccountSync}
-              className="relative w-9 h-9 rounded-xl bg-[#FE385E] text-white flex items-center justify-center shadow-[0_0_14px_rgba(254,56,94,0.4)] hover:brightness-110 active:scale-95 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg shrink-0 ml-1 cursor-pointer font-bold text-[12px]"
-              title="Cloud Sync"
+          {/* Account Profile / Sync Button */}
+          <button
+            id="header-account-btn"
+            aria-label="Account & Sync"
+            onClick={onOpenAccountSync}
+            className="relative w-9 h-9 rounded-xl bg-[#FE385E] text-white flex items-center justify-center shadow-[0_0_14px_rgba(254,56,94,0.4)] hover:brightness-110 active:scale-95 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg shrink-0 ml-1 cursor-pointer font-bold text-[12px]"
+            title="Cloud Sync"
           >
             {userName ? (
               <span>{getUserInitials(userName)}</span>

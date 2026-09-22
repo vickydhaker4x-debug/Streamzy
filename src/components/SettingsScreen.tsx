@@ -8,7 +8,6 @@ interface SettingsScreenProps {
   settings: SettingsState;
   onUpdateSettings: (newSettings: Partial<SettingsState>) => void;
   onBack: () => void;
-  onOpenEqualizer: () => void;
   currentTrack?: Track | null;
   isPlaying?: boolean;
   currentTimeSec?: number;
@@ -26,7 +25,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   settings,
   onUpdateSettings,
   onBack,
-  onOpenEqualizer,
   currentTrack,
   isPlaying = false,
   currentTimeSec = 0,
@@ -714,33 +712,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 );
               })}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Section: Audio & Equalizer */}
-      <div className="flex flex-col gap-2.5">
-        <span className="text-[11px] uppercase tracking-wider font-bold text-[#a1a1aa] px-1">
-          Audio &amp; Equalizer
-        </span>
-
-        <div className="liquid-glass rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-white/[0.04]">
-          <div 
-            onClick={onOpenEqualizer}
-            className="flex items-center justify-between cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl liquid-glass flex items-center justify-center text-[var(--color-primary)] shrink-0">
-                <span className="material-symbols-outlined floating-icon text-[20px]">graphic_eq</span>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[14px] text-[#e4e1e7] font-semibold">Equalizer &amp; Sound FX</span>
-                <span className="text-[12px] text-[var(--color-primary)] capitalize">
-                  Preset: {settings.equalizerPreset} • Bass Boost
-                </span>
-              </div>
-            </div>
-            <span className="material-symbols-outlined floating-icon text-[#a1a1aa] text-[20px]">chevron_right</span>
           </div>
         </div>
       </div>

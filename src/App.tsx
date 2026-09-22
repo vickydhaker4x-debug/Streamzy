@@ -24,7 +24,6 @@ const LibraryScreen = lazy(() => import('./components/LibraryScreen').then(m => 
 const PlanScreen = lazy(() => import('./components/PlanScreen').then(m => ({ default: m.PlanScreen })));
 const OfflineScreen = lazy(() => import('./components/OfflineScreen').then(m => ({ default: m.OfflineScreen })));
 const PluginsScreen = lazy(() => import('./components/PluginsScreen').then(m => ({ default: m.PluginsScreen })));
-import { EqualizerModal } from './components/EqualizerModal';
 import { SleepTimerModal } from './components/SleepTimerModal';
 
 import { personalizationService, PersonalizedHomeData } from './services/personalizationService';
@@ -80,7 +79,6 @@ export default function App() {
   const [currentTimeSec, setCurrentTimeSec] = useState<number>(0);
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState<boolean>(false);
   const [isAccountSyncOpen, setIsAccountSyncOpen] = useState<boolean>(false);
-  const [isEqualizerOpen, setIsEqualizerOpen] = useState<boolean>(false);
   const [isSleepTimerOpen, setIsSleepTimerOpen] = useState<boolean>(false);
   const [showBackgroundPermission, setShowBackgroundPermission] = useState<boolean>(() => {
     try {
@@ -1266,7 +1264,6 @@ export default function App() {
         activeScreen={activeScreen}
         userName={userName}
         onOpenAccountSync={() => setIsAccountSyncOpen(true)}
-        onOpenEqualizer={() => setIsEqualizerOpen(true)}
         onOpenSettings={() => setActiveScreen('settings')}
       />
 
@@ -1374,7 +1371,6 @@ export default function App() {
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
                   onBack={() => setActiveScreen('home')}
-                  onOpenEqualizer={() => setIsNowPlayingOpen(true)}
                   currentTrack={currentTrack}
                   isPlaying={isPlaying}
                   currentTimeSec={currentTimeSec}
@@ -1475,20 +1471,6 @@ export default function App() {
           }}
         />
       )}
-
-      {/* 10-Band DSP Equalizer Modal */}
-      <EqualizerModal
-        isOpen={isEqualizerOpen}
-        onClose={() => setIsEqualizerOpen(false)}
-        currentPreset={settings.equalizerPreset}
-        onPresetChange={(preset, bands) => {
-          handleUpdateSettings({ equalizerPreset: preset, equalizerBands: bands });
-        }}
-        crossfadeSec={settings.crossfadeDurationSec || 3}
-        onCrossfadeChange={(sec) => {
-          handleUpdateSettings({ crossfadeDurationSec: sec });
-        }}
-      />
 
       {/* Bloomee Sleep Timer Modal */}
       <SleepTimerModal
