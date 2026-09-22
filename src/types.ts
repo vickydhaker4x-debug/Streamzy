@@ -137,7 +137,7 @@ export interface TimeContextInfo {
 }
 
 export type AccentColor = 'cherry' | 'cyan' | 'coral' | 'orange' | 'emerald' | 'purple';
-export type ActiveScreen = 'home' | 'explore' | 'search' | 'library' | 'offline' | 'plugins' | 'settings';
+export type ActiveScreen = 'home' | 'explore' | 'search' | 'library' | 'plugins' | 'settings';
 
 export interface BloomeePlugin {
   id: string;

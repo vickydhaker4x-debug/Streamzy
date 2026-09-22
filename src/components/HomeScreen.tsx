@@ -210,55 +210,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
         </div>
-
-        {/* BLOOMEE HOME SEARCH BAR */}
-        <div className="mt-2 w-full">
-          <div 
-            onClick={() => onNavigateToSearch?.(homeSearchQuery || '')}
-            className="flex items-center w-full h-12 bg-[#170C1A]/85 hover:bg-[#221026] rounded-2xl px-4 border border-white/10 hover:border-[#FE385E]/50 shadow-lg cursor-pointer transition-all group"
-          >
-            <Search size={22} className="text-[#FE385E] mr-3 group-hover:scale-110 transition-transform" />
-            <input
-              type="text"
-              value={homeSearchQuery}
-              onChange={(e) => setHomeSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && homeSearchQuery.trim()) {
-                  e.stopPropagation();
-                  onNavigateToSearch?.(homeSearchQuery.trim());
-                }
-              }}
-              placeholder="Search songs, albums, artists, or lyrics..."
-              className="w-full bg-transparent text-[14px] text-white placeholder:text-zinc-400 focus:outline-none cursor-pointer"
-            />
-            {homeSearchQuery && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setHomeSearchQuery('');
-                }}
-                className="text-zinc-400 hover:text-white p-1 mr-1.5 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onNavigateToSearch?.(homeSearchQuery || '');
-              }}
-              className="px-3.5 py-1.5 rounded-xl bg-[#FE385E] hover:bg-[#FF4D71] text-white text-xs font-bold transition shrink-0 flex items-center gap-1 shadow-[0_0_14px_rgba(254,56,94,0.4)] cursor-pointer"
-            >
-              <span>Search</span>
-              <ArrowRight size={15} />
-            </button>
-          </div>
-
-
-        </div>
       </div>
-
-
 
       {/* DYNAMIC SECTIONS RENDERED WITH DATA THRESHOLDS & NO DUPLICATE SONGS */}
       {homeData.sections.map((section: DynamicHomeSection) => {

@@ -8,11 +8,9 @@ import { audioEngine } from './utils/audioPlayer';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { MiniPlayer } from './components/MiniPlayer';
-import { BackgroundPermissionModal } from './components/BackgroundPermissionModal';
 import { BootSplashScreen } from './components/BootSplashScreen';
 import { MusicVideoModal } from './components/MusicVideoModal';
 import { OnboardingModal } from './components/OnboardingModal';
-import { AccountSyncModal } from './components/AccountSyncModal';
 import { NetworkOfflineBanner } from "./components/NetworkOfflineBanner";
 
 
@@ -22,7 +20,6 @@ const NowPlayingScreen = lazy(() => import('./components/NowPlayingScreen').then
 const SearchScreen = lazy(() => import('./components/SearchScreen').then(m => ({ default: m.SearchScreen })));
 const LibraryScreen = lazy(() => import('./components/LibraryScreen').then(m => ({ default: m.LibraryScreen })));
 const PlanScreen = lazy(() => import('./components/PlanScreen').then(m => ({ default: m.PlanScreen })));
-const OfflineScreen = lazy(() => import('./components/OfflineScreen').then(m => ({ default: m.OfflineScreen })));
 const PluginsScreen = lazy(() => import('./components/PluginsScreen').then(m => ({ default: m.PluginsScreen })));
 import { SleepTimerModal } from './components/SleepTimerModal';
 
@@ -40,6 +37,7 @@ import { realtimeSyncService } from './services/realtimeSyncService';
 import { authClient } from './services/authClient';
 import { telemetryClient } from './services/telemetryClient';
 import { nativeAudioPlayerService } from './services/nativeAudioPlayerService';
+import { extractAmbientPalette, applyPaletteToDocument } from './utils/colorExtractor';
 
 export default function App() {
   const [userName, setUserName] = useState<string>(() => {
@@ -79,7 +77,6 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTimeSec, setCurrentTimeSec] = useState<number>(0);
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState<boolean>(false);
-  const [isAccountSyncOpen, setIsAccountSyncOpen] = useState<boolean>(false);
   const [isSleepTimerOpen, setIsSleepTimerOpen] = useState<boolean>(false);
   const [showBackgroundPermission, setShowBackgroundPermission] = useState<boolean>(() => {
     try {
@@ -123,6 +120,23 @@ export default function App() {
     settings.invidiousInstance,
     settings.backgroundPlayback
   ]);
+
+  // Dynamic song color adaptation: dynamically changes UI colors with the playing song
+  useEffect(() => {
+    let isCancelled = false;
+    const coverUrl = currentTrack?.coverUrl || TRACKS[0]?.coverUrl;
+    const key = (currentTrack?.id || 'streamzy') + (currentTrack?.title || 'track');
+
+    extractAmbientPalette(coverUrl, key).then((palette) => {
+      if (!isCancelled) {
+        applyPaletteToDocument(palette, settings.pureBlackAmoled);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentTrack?.id, currentTrack?.coverUrl, currentTrack?.title, settings.pureBlackAmoled]);
 
   // YouTube Music / Spotify-Style Personalization State
   const [originalQueue, setOriginalQueue] = useState<Track[]>([]);
@@ -490,9 +504,7 @@ export default function App() {
     const setupBackButton = async () => {
       try {
         backButtonHandle = await CapApp.addListener('backButton', () => {
-          if (isAccountSyncOpen) {
-            setIsAccountSyncOpen(false);
-          } else if (isNowPlayingOpen) {
+          if (isNowPlayingOpen) {
             setIsNowPlayingOpen(false);
           } else if (activeScreen !== 'home') {
             setActiveScreen('home');
@@ -508,9 +520,7 @@ export default function App() {
     setupBackButton();
 
     const handlePopState = () => {
-      if (isAccountSyncOpen) {
-        setIsAccountSyncOpen(false);
-      } else if (isNowPlayingOpen) {
+      if (isNowPlayingOpen) {
         setIsNowPlayingOpen(false);
       } else if (activeScreen !== 'home') {
         setActiveScreen('home');
@@ -525,15 +535,15 @@ export default function App() {
       }
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [isAccountSyncOpen, isNowPlayingOpen, activeScreen]);
+  }, [isNowPlayingOpen, activeScreen]);
 
   // Push history state whenever user enters a subview or modal
   useEffect(() => {
     window.history.pushState(
-      { screen: activeScreen, nowPlaying: isNowPlayingOpen, accountSync: isAccountSyncOpen },
+      { screen: activeScreen, nowPlaying: isNowPlayingOpen },
       ''
     );
-  }, [activeScreen, isNowPlayingOpen, isAccountSyncOpen]);
+  }, [activeScreen, isNowPlayingOpen]);
 
   // Handle equalizer preset updates
   useEffect(() => {
@@ -1323,26 +1333,8 @@ export default function App() {
       <Header
         activeScreen={activeScreen}
         userName={userName}
-        onOpenAccountSync={() => setIsAccountSyncOpen(true)}
         onOpenSettings={() => setActiveScreen('settings')}
       />
-
-      {/* Dynamic YouTube Music Personalization Toast */}
-      {vibeToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 w-full max-w-sm">
-          <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_16px_0_rgba(0,0,0,0.2)]/95 backdrop-blur-xl border border-[var(--color-primary)]/40 shadow-2xl shadow-black/80">
-            <Sparkles size={18} className="text-[var(--color-primary)] animate-pulse shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-bold text-[var(--color-primary)] uppercase tracking-wider">
-                Tailoring Queue &amp; Home
-              </span>
-              <span className="text-[12px] text-[#e4e1e7] font-medium truncate">
-                {vibeToast.title} • {vibeToast.vibe}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area - calculated padding ensures top content is never hidden behind header */}
       <main className="flex-1 w-full overflow-y-auto overflow-x-hidden pt-[calc(max(env(safe-area-inset-top,0px),36px)+64px)] pb-36">
@@ -1411,14 +1403,6 @@ export default function App() {
                   onPlayQueue={handlePlayQueue}
                   onTogglePlay={handleTogglePlay}
                   onToggleFavorite={handleToggleFavorite}
-                />
-              )}
-
-              {activeScreen === 'offline' && (
-                <OfflineScreen
-                  onPlayTrack={handleSelectTrack}
-                  currentTrack={currentTrack}
-                  isPlaying={isPlaying}
                 />
               )}
 
@@ -1520,18 +1504,6 @@ export default function App() {
         }}
       />
 
-      {/* Account & Sync Modal Overlay */}
-      {isAccountSyncOpen && (
-        <AccountSyncModal
-          userName={userName}
-          onClose={() => setIsAccountSyncOpen(false)}
-          onOpenSettings={() => {
-            setIsAccountSyncOpen(false);
-            setActiveScreen('settings');
-          }}
-        />
-      )}
-
       {/* Bloomee Sleep Timer Modal */}
       <SleepTimerModal
         isOpen={isSleepTimerOpen}
@@ -1543,13 +1515,6 @@ export default function App() {
         onCancelTimer={() => {
           handleUpdateSettings({ sleepTimerRemaining: 0 });
         }}
-      />
-
-      {/* First-Time Background & Screen-Off Playback Permission Modal */}
-      <BackgroundPermissionModal
-        isOpen={showBackgroundPermission}
-        onAllow={handleAllowBackgroundPermission}
-        onDismiss={handleDismissBackgroundPermission}
       />
 
       {/* YouTube Music Video Playback Modal */}

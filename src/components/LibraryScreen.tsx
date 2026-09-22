@@ -60,9 +60,9 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   onTogglePlay: _onTogglePlay,
   onToggleFavorite
 }) => {
-  // Navigation Tabs: playlists, liked, albums, artists, subscriptions, history, downloads
+  // Navigation Tabs: playlists, liked, albums, artists, subscriptions, history
   const [activeTab, setActiveTab] = useState<
-    'playlists' | 'liked' | 'albums' | 'artists' | 'subscriptions' | 'history' | 'downloads'
+    'playlists' | 'liked' | 'albums' | 'artists' | 'subscriptions' | 'history'
   >('playlists');
 
   // Subscriptions & Downloads live update tick
@@ -284,8 +284,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     { id: 'albums', label: 'Albums', Icon: Disc3, badge: albums.length },
     { id: 'artists', label: 'Artists', Icon: User, badge: artists.length },
     { id: 'subscriptions', label: 'Subscriptions', Icon: Bell, badge: subscriptionService.getAllSubscribed().length },
-    { id: 'history', label: 'History & Activity', Icon: History, badge: playbackHistory.length },
-    { id: 'downloads', label: 'Offline', Icon: DownloadCloud, badge: offlineService.getAllDownloads().length }
+    { id: 'history', label: 'History & Activity', Icon: History, badge: playbackHistory.length }
   ] as const;
 
   return (
@@ -642,19 +641,8 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
           onToggleDownload={handleToggleDownload}
           isDownloaded={isDownloaded}
         />
-      ) : activeTab === 'downloads' ? (
-        /* 9. Offline Mode & Downloads Section */
-        <OfflineDownloadsSection
-          currentTrack={currentTrack}
-          isPlaying={isPlaying}
-          onSelectTrack={onSelectTrack}
-          onPlayDownloadedQueue={(q, idx) => handlePlayQueueInternal(q, idx || 0)}
-          onToggleFavorite={onToggleFavorite}
-          playbackHistory={playbackHistory}
-          allTracks={tracks}
-        />
       ) : (
-        /* 10. Playlists Tab (Includes Liked Songs Auto-Generated Playlist + Custom Playlists) */
+        /* Playlists Tab (Includes Liked Songs Auto-Generated Playlist + Custom Playlists) */
         <div id="playlists-tab-content" className="flex flex-col gap-6 animate-fade-in">
           {/* Prominent Auto-Generated Liked Songs Playlist Card */}
           <div className="flex flex-col gap-2.5">

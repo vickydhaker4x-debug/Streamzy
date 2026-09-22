@@ -1,19 +1,17 @@
 import React from 'react';
-import { Settings, Cloud } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { ActiveScreen } from '../types';
 
 interface HeaderProps {
   activeScreen: ActiveScreen;
   userName?: string;
-  onOpenAccountSync: () => void;
   onOpenHistory?: () => void;
   onOpenSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeScreen,
-  userName,
-  onOpenAccountSync,
+  userName: _userName,
   onOpenHistory: _onOpenHistory,
   onOpenSettings
 }) => {
@@ -35,11 +33,6 @@ export const Header: React.FC<HeaderProps> = ({
       default:
         return 'Music';
     }
-  };
-
-  const getUserInitials = (name: string) => {
-    if (!name) return '';
-    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -74,35 +67,16 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="header-settings-btn"
               onClick={onOpenSettings}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer ${
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-white/10 cursor-pointer ${
                 activeScreen === 'settings'
-                  ? 'bg-[#FE385E] text-white'
-                  : 'bg-[#180E1B] hover:bg-[#2A162D] text-[#DAEAF7]'
+                  ? 'bg-[var(--color-primary)] text-white shadow-[0_0_14px_var(--dynamic-glow,rgba(254,56,94,0.4))]'
+                  : 'bg-white/5 hover:bg-white/10 text-white/80'
               }`}
               title="App Settings"
             >
               <Settings size={18} />
             </button>
           )}
-
-          {/* Account Profile / Sync Button */}
-          <button
-            id="header-account-btn"
-            aria-label="Account & Sync"
-            onClick={onOpenAccountSync}
-            className="relative w-9 h-9 rounded-xl bg-[#FE385E] text-white flex items-center justify-center shadow-[0_0_14px_rgba(254,56,94,0.4)] hover:brightness-110 active:scale-95 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg shrink-0 ml-1 cursor-pointer font-bold text-[12px]"
-            title="Cloud Sync"
-          >
-            {userName ? (
-              <span>{getUserInitials(userName)}</span>
-            ) : (
-              <Cloud size={17} />
-            )}
-            <span
-              className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-black"
-              title="Online"
-            />
-          </button>
         </div>
       </div>
     </header>

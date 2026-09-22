@@ -7,60 +7,124 @@
 export interface AmbientPalette {
   topColor: string;       // Upper ambient glow (e.g., olive, teal, cool slate)
   bottomColor: string;    // Lower ambient tone (e.g., terracotta, amber, warm rust)
-  accentColor: string;    // Highlight color for controls
+  accentColor: string;    // Vibrant highlight color for controls
+  accentLight: string;    // Lighter highlight tint
+  onAccent: string;       // Text color for contrast (#ffffff or #0f1013)
   glowColor: string;      // Soft luminous aura
+  surface: string;        // Deep dark tinted surface background
+  surfaceContainer: string; // Elevated surface container
+  surfaceHigh: string;    // Card elevated tone
+  surfaceHighest: string; // High contrast element tone
   gradientCss: string;    // Complete multi-stop radial & linear background CSS
+  cardGradient: string;   // Card ambient sheen
 }
 
 // Fallback dynamic harmonic palettes based on string hashes
 const HARMONIC_PRESETS: AmbientPalette[] = [
-  // Terracotta / Olive Slate (matching the user's OpenTune screenshot)
+  // Terracotta / Olive Slate
   {
     topColor: 'rgba(54, 68, 58, 0.95)',
     bottomColor: 'rgba(158, 79, 58, 0.95)',
     accentColor: '#fb923c',
-    glowColor: 'rgba(158, 79, 58, 0.45)',
-    gradientCss: 'radial-gradient(ellipse at 20% 0%, rgba(54, 68, 58, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 10%, rgba(42, 59, 68, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(30, 38, 33, 0.8) 0%, rgba(130, 62, 44, 0.95) 70%, rgba(100, 44, 30, 1) 100%)'
+    accentLight: '#fdba74',
+    onAccent: '#2c0f04',
+    glowColor: 'rgba(251, 146, 60, 0.45)',
+    surface: '#120f0e',
+    surfaceContainer: '#1c1715',
+    surfaceHigh: '#27201c',
+    surfaceHighest: '#332924',
+    gradientCss: 'radial-gradient(ellipse at 20% 0%, rgba(54, 68, 58, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 10%, rgba(42, 59, 68, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(30, 38, 33, 0.8) 0%, rgba(130, 62, 44, 0.95) 70%, rgba(100, 44, 30, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(28, 23, 21, 0.85))'
   },
   // Sunset Coral & Deep Midnight Purple
   {
     topColor: 'rgba(38, 48, 74, 0.95)',
     bottomColor: 'rgba(168, 62, 78, 0.95)',
     accentColor: '#f87171',
+    accentLight: '#fca5a5',
+    onAccent: '#33080c',
     glowColor: 'rgba(248, 113, 113, 0.45)',
-    gradientCss: 'radial-gradient(ellipse at 25% 5%, rgba(46, 58, 90, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 75% 15%, rgba(68, 42, 74, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(28, 34, 52, 0.8) 0%, rgba(142, 50, 66, 0.95) 70%, rgba(108, 36, 48, 1) 100%)'
+    surface: '#130d12',
+    surfaceContainer: '#1d131b',
+    surfaceHigh: '#291b26',
+    surfaceHighest: '#372333',
+    gradientCss: 'radial-gradient(ellipse at 25% 5%, rgba(46, 58, 90, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 75% 15%, rgba(68, 42, 74, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(28, 34, 52, 0.8) 0%, rgba(142, 50, 66, 0.95) 70%, rgba(108, 36, 48, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(248, 113, 113, 0.12), rgba(29, 19, 27, 0.85))'
   },
   // Emerald Forest & Warm Amber Gold
   {
     topColor: 'rgba(32, 60, 50, 0.95)',
     bottomColor: 'rgba(146, 94, 36, 0.95)',
     accentColor: '#f59e0b',
+    accentLight: '#fcd34d',
+    onAccent: '#2a1702',
     glowColor: 'rgba(245, 158, 11, 0.45)',
-    gradientCss: 'radial-gradient(ellipse at 15% 5%, rgba(32, 60, 50, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 85% 15%, rgba(40, 55, 68, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(24, 44, 36, 0.8) 0%, rgba(126, 80, 30, 0.95) 70%, rgba(92, 58, 20, 1) 100%)'
+    surface: '#0f1411',
+    surfaceContainer: '#171e1a',
+    surfaceHigh: '#212a25',
+    surfaceHighest: '#2d3a33',
+    gradientCss: 'radial-gradient(ellipse at 15% 5%, rgba(32, 60, 50, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 85% 15%, rgba(40, 55, 68, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(24, 44, 36, 0.8) 0%, rgba(126, 80, 30, 0.95) 70%, rgba(92, 58, 20, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(23, 30, 26, 0.85))'
   },
   // Deep Ocean Indigo & Cyan Glow
   {
     topColor: 'rgba(28, 44, 68, 0.95)',
     bottomColor: 'rgba(38, 92, 118, 0.95)',
     accentColor: '#38bdf8',
+    accentLight: '#7dd3fc',
+    onAccent: '#032030',
     glowColor: 'rgba(56, 189, 248, 0.45)',
-    gradientCss: 'radial-gradient(ellipse at 20% 5%, rgba(36, 56, 88, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 15%, rgba(24, 52, 70, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(20, 32, 48, 0.8) 0%, rgba(32, 78, 102, 0.95) 70%, rgba(22, 56, 74, 1) 100%)'
+    surface: '#0d1318',
+    surfaceContainer: '#141d24',
+    surfaceHigh: '#1c2832',
+    surfaceHighest: '#263744',
+    gradientCss: 'radial-gradient(ellipse at 20% 5%, rgba(36, 56, 88, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 15%, rgba(24, 52, 70, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(20, 32, 48, 0.8) 0%, rgba(32, 78, 102, 0.95) 70%, rgba(22, 56, 74, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(20, 29, 36, 0.85))'
   },
   // Velvet Ruby & Smokey Charcoal
   {
     topColor: 'rgba(52, 38, 48, 0.95)',
     bottomColor: 'rgba(140, 40, 55, 0.95)',
     accentColor: '#fb7185',
+    accentLight: '#fda4af',
+    onAccent: '#380511',
     glowColor: 'rgba(251, 113, 133, 0.45)',
-    gradientCss: 'radial-gradient(ellipse at 15% 5%, rgba(56, 40, 52, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 85% 15%, rgba(68, 38, 50, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(36, 26, 34, 0.8) 0%, rgba(120, 32, 46, 0.95) 70%, rgba(88, 22, 32, 1) 100%)'
+    surface: '#140d10',
+    surfaceContainer: '#1e1419',
+    surfaceHigh: '#2b1c23',
+    surfaceHighest: '#39262f',
+    gradientCss: 'radial-gradient(ellipse at 15% 5%, rgba(56, 40, 52, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 85% 15%, rgba(68, 38, 50, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(36, 26, 34, 0.8) 0%, rgba(120, 32, 46, 0.95) 70%, rgba(88, 22, 32, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(251, 113, 133, 0.12), rgba(30, 20, 25, 0.85))'
+  },
+  // Electric Magenta & Cyber Purple
+  {
+    topColor: 'rgba(48, 28, 64, 0.95)',
+    bottomColor: 'rgba(156, 39, 176, 0.95)',
+    accentColor: '#d946ef',
+    accentLight: '#f0abfc',
+    onAccent: '#2a0230',
+    glowColor: 'rgba(217, 70, 239, 0.45)',
+    surface: '#120a16',
+    surfaceContainer: '#1c1022',
+    surfaceHigh: '#271630',
+    surfaceHighest: '#351f42',
+    gradientCss: 'radial-gradient(ellipse at 20% 0%, rgba(70, 32, 90, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 10%, rgba(42, 20, 60, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(24, 12, 32, 0.8) 0%, rgba(120, 30, 140, 0.95) 70%, rgba(80, 20, 95, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(217, 70, 239, 0.12), rgba(28, 16, 34, 0.85))'
   },
   // Warm Mocha Brown & Rust Orange
   {
     topColor: 'rgba(58, 46, 40, 0.95)',
     bottomColor: 'rgba(148, 72, 42, 0.95)',
     accentColor: '#f97316',
+    accentLight: '#fdba74',
+    onAccent: '#2b0f02',
     glowColor: 'rgba(249, 115, 22, 0.45)',
-    gradientCss: 'radial-gradient(ellipse at 20% 5%, rgba(62, 50, 42, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 15%, rgba(50, 44, 48, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(40, 32, 28, 0.8) 0%, rgba(128, 60, 34, 0.95) 70%, rgba(94, 42, 22, 1) 100%)'
+    surface: '#130f0d',
+    surfaceContainer: '#1d1714',
+    surfaceHigh: '#29201c',
+    surfaceHighest: '#372b26',
+    gradientCss: 'radial-gradient(ellipse at 20% 5%, rgba(62, 50, 42, 0.9) 0%, transparent 60%), radial-gradient(ellipse at 80% 15%, rgba(50, 44, 48, 0.85) 0%, transparent 55%), linear-gradient(180deg, rgba(40, 32, 28, 0.8) 0%, rgba(128, 60, 34, 0.95) 70%, rgba(94, 42, 22, 1) 100%)',
+    cardGradient: 'linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(29, 23, 20, 0.85))'
   }
 ];
 
@@ -223,15 +287,44 @@ export async function extractAmbientPalette(imageUrl?: string, fallbackKey: stri
         const [secR, secG, secB] = hslToRgb((topH + 35) % 360, Math.max(25, topS), adjTopL * 0.9);
         const secRgba = `rgba(${secR}, ${secG}, ${secB}, 0.85)`;
 
+        // Calculate accent color (vibrant, rich luminance)
+        const [accR, accG, accB] = hslToRgb(botH, Math.min(100, Math.max(65, botS * 1.2)), Math.min(65, Math.max(48, botL)));
+        const [accLightR, accLightG, accLightB] = hslToRgb(botH, Math.min(100, Math.max(65, botS)), Math.min(80, Math.max(65, botL + 15)));
+        
+        // Calculate contrast-safe text color on accent
+        const accBrightness = (accR * 299 + accG * 587 + accB * 114) / 1000;
+        const onAccent = accBrightness > 155 ? '#0f1013' : '#ffffff';
+
+        // Deep tinted dark surface colors matching song ambiance
+        const [surfR, surfG, surfB] = hslToRgb(botH, Math.max(10, Math.min(25, botS * 0.3)), 5);
+        const [surfContR, surfContG, surfContB] = hslToRgb(botH, Math.max(12, Math.min(28, botS * 0.35)), 8);
+        const [surfHighR, surfHighG, surfHighB] = hslToRgb(botH, Math.max(14, Math.min(30, botS * 0.4)), 12);
+        const [surfHighestR, surfHighestG, surfHighestB] = hslToRgb(botH, Math.max(16, Math.min(32, botS * 0.45)), 17);
+
+        const accentColorHex = `#${accR.toString(16).padStart(2, '0')}${accG.toString(16).padStart(2, '0')}${accB.toString(16).padStart(2, '0')}`;
+        const accentLightHex = `#${accLightR.toString(16).padStart(2, '0')}${accLightG.toString(16).padStart(2, '0')}${accLightB.toString(16).padStart(2, '0')}`;
+        const surfaceHex = `#${surfR.toString(16).padStart(2, '0')}${surfG.toString(16).padStart(2, '0')}${surfB.toString(16).padStart(2, '0')}`;
+        const surfaceContHex = `#${surfContR.toString(16).padStart(2, '0')}${surfContG.toString(16).padStart(2, '0')}${surfContB.toString(16).padStart(2, '0')}`;
+        const surfaceHighHex = `#${surfHighR.toString(16).padStart(2, '0')}${surfHighG.toString(16).padStart(2, '0')}${surfHighB.toString(16).padStart(2, '0')}`;
+        const surfaceHighestHex = `#${surfHighestR.toString(16).padStart(2, '0')}${surfHighestG.toString(16).padStart(2, '0')}${surfHighestB.toString(16).padStart(2, '0')}`;
+
         // Build OpenTune-style atmospheric gradient
         const gradientCss = `radial-gradient(ellipse at 18% 0%, ${topRgba} 0%, transparent 60%), radial-gradient(ellipse at 82% 8%, ${secRgba} 0%, transparent 55%), linear-gradient(180deg, rgba(${Math.round(finalTopR * 0.6)}, ${Math.round(finalTopG * 0.6)}, ${Math.round(finalTopB * 0.6)}, 0.85) 0%, ${botRgba} 68%, rgba(${Math.round(finalBotR * 0.75)}, ${Math.round(finalBotG * 0.75)}, ${Math.round(finalBotB * 0.75)}, 1) 100%)`;
+        const cardGradient = `linear-gradient(135deg, rgba(${accR}, ${accG}, ${accB}, 0.12), rgba(${surfContR}, ${surfContG}, ${surfContB}, 0.85))`;
 
         const palette: AmbientPalette = {
           topColor: topRgba,
           bottomColor: botRgba,
-          accentColor: `rgb(${Math.min(255, finalBotR + 40)}, ${Math.min(255, finalBotG + 40)}, ${Math.min(255, finalBotB + 40)})`,
+          accentColor: accentColorHex,
+          accentLight: accentLightHex,
+          onAccent,
           glowColor: glowRgba,
-          gradientCss
+          surface: surfaceHex,
+          surfaceContainer: surfaceContHex,
+          surfaceHigh: surfaceHighHex,
+          surfaceHighest: surfaceHighestHex,
+          gradientCss,
+          cardGradient
         };
 
         paletteCache.set(cacheKey, palette);
@@ -249,4 +342,34 @@ export async function extractAmbientPalette(imageUrl?: string, fallbackKey: stri
 
     img.src = imageUrl;
   });
+}
+
+/**
+ * Applies dynamic song theme colors to document root CSS custom properties.
+ * Creates a fluid, harmonious song-theme experience throughout the app.
+ */
+export function applyPaletteToDocument(palette: AmbientPalette, pureBlack: boolean = false) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+
+  root.style.setProperty('--color-primary', palette.accentColor);
+  root.style.setProperty('--color-primary-light', palette.accentLight);
+  root.style.setProperty('--color-primary-container', palette.accentColor);
+  root.style.setProperty('--color-on-primary', palette.onAccent);
+  root.style.setProperty('--dynamic-accent', palette.accentColor);
+  root.style.setProperty('--dynamic-accent-light', palette.accentLight);
+  root.style.setProperty('--dynamic-glow', palette.glowColor);
+  root.style.setProperty('--dynamic-top', palette.topColor);
+  root.style.setProperty('--dynamic-bottom', palette.bottomColor);
+  root.style.setProperty('--dynamic-gradient', palette.gradientCss);
+  root.style.setProperty('--dynamic-card-gradient', palette.cardGradient);
+
+  if (!pureBlack) {
+    root.style.setProperty('--color-surface', palette.surface);
+    root.style.setProperty('--color-surface-container', palette.surfaceContainer);
+    root.style.setProperty('--color-surface-high', palette.surfaceHigh);
+    root.style.setProperty('--color-surface-highest', palette.surfaceHighest);
+    root.style.setProperty('--color-surface-low', palette.surface);
+    root.style.setProperty('--color-surface-lowest', palette.surface);
+  }
 }

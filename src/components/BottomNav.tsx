@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Compass, Search, Library, DownloadCloud } from 'lucide-react';
+import { Compass, Search, Library } from 'lucide-react';
 import { ActiveScreen } from '../types';
 
 interface BottomNavProps {
@@ -15,8 +15,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const tabs = [
     { id: 'home' as ActiveScreen, label: 'Explore', Icon: Compass },
     { id: 'search' as ActiveScreen, label: 'Search', Icon: Search },
-    { id: 'library' as ActiveScreen, label: 'Library', Icon: Library },
-    { id: 'offline' as ActiveScreen, label: 'Offline', Icon: DownloadCloud }
+    { id: 'library' as ActiveScreen, label: 'Library', Icon: Library }
   ];
 
   return (

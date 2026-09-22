@@ -272,8 +272,8 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
       {/* Main Responsive Layout Container */}
       <div className="relative z-10 w-full max-w-md mx-auto h-full flex flex-col justify-between px-6 pt-[max(env(safe-area-inset-top,0px),16px)] pb-[max(env(safe-area-inset-bottom,0px),16px)]">
 
-        {/* 1. Header (Centered OpenTune style with back chevron) */}
-        <header className="relative w-full flex items-center justify-between py-2 shrink-0">
+        {/* 1. Header (Centered OpenTune style with playlist context & master quality) */}
+        <header className="relative w-full flex items-center justify-between py-1 shrink-0">
           <button
             id="now-playing-close-btn"
             aria-label="Minimize player"
@@ -284,12 +284,18 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
           </button>
 
           <div className="flex flex-col items-center justify-center text-center px-2 flex-1 min-w-0">
-            <span className="text-[14px] font-semibold text-white/90 tracking-wide">
-              Now Playing
-            </span>
-            <span className="text-[13px] font-medium text-white/80 truncate w-full max-w-[270px] mt-0.5">
+            <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-white/60 font-bold">
+              <span>Playing From Playlist</span>
+              <span className="material-symbols-outlined text-[12px]">expand_more</span>
+            </div>
+            <span className="text-[13px] font-semibold text-white/95 truncate w-full max-w-[270px] mt-0.5">
               {currentTrack.album || currentTrack.title} {currentTrack.artist ? `• ${currentTrack.artist}` : ''}
             </span>
+            {/* Master Quality Badge */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 mt-0.5 rounded-full bg-white/10 border border-white/10 text-[9.5px] font-bold text-white/80 tracking-wider uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Master FLAC • 96kHz / 24-bit</span>
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-1 -mr-2">
@@ -304,7 +310,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
         </header>
 
         {/* 2. Centerpiece: Album Artwork or Synced Lyrics */}
-        <div className="w-full flex-1 flex flex-col justify-center items-center my-auto py-2">
+        <div className="w-full flex-1 flex flex-col justify-center items-center my-auto py-1">
           {showLyrics ? (
             <div 
               ref={lyricsContainerRef}
@@ -373,9 +379,14 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
               )}
             </div>
           ) : (
-            <div className="w-full aspect-square max-w-[260px] relative mx-auto group">
+            <div className="w-full aspect-square max-w-[260px] sm:max-w-[280px] relative mx-auto group">
+              {/* Dynamic Glow Aura behind artwork */}
               <div
-                className={`w-full h-full rounded-[24px] overflow-hidden bg-black/40 relative shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] border border-white/10 transition-transform duration-500 ${
+                className="absolute inset-0 rounded-[28px] blur-2xl opacity-60 transition-colors duration-700 pointer-events-none"
+                style={{ background: palette.glowColor }}
+              />
+              <div
+                className={`w-full h-full rounded-[26px] overflow-hidden bg-black/40 relative shadow-[0_24px_60px_-10px_rgba(0,0,0,0.85)] ring-1 ring-white/15 transition-transform duration-500 ${
                   isPlaying ? 'scale-100' : 'scale-[0.98] opacity-95'
                 }`}
               >
@@ -387,6 +398,11 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
                   loading="eager"
                   showCornerGlow={false}
                 />
+                {/* Spatial 3D pill badge */}
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-[10px] font-bold text-white tracking-wider flex items-center gap-1 shadow-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] animate-ping" />
+                  <span>Spatial 3D</span>
+                </div>
               </div>
             </div>
           )}
@@ -496,8 +512,8 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
           </div>
         </div>
 
-        {/* 4. Signature OpenTune / Android 13+ Progress Bar Scrubber */}
-        <div className="w-full flex flex-col shrink-0 mb-3">
+        {/* 4. Signature OpenTune / Material 3 Progress Bar Scrubber */}
+        <div className="w-full flex flex-col shrink-0 mb-2">
           <div
             id="now-playing-scrubber"
             ref={progressBarRef}
@@ -506,7 +522,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             className="relative w-full h-8 flex items-center cursor-pointer select-none touch-none group"
           >
             {/* Track Background (Unplayed - semi-transparent muted bar with rounded tip) */}
-            <div className="relative w-full h-[9px] rounded-full bg-white/25 overflow-visible">
+            <div className="relative w-full h-[8px] rounded-full bg-white/20 overflow-visible">
               {/* Active Played Progress Pill */}
               <div
                 style={{ width: `${progressPercent}%` }}
@@ -516,7 +532,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
               {/* Vertical Pill Thumb / Cursor Indicator */}
               <div
                 style={{ left: `${progressPercent}%` }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[5px] h-[22px] rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.6)] pointer-events-none group-active:scale-110 transition-transform"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[6px] h-[20px] rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,0.7)] pointer-events-none group-active:scale-115 transition-transform"
               />
 
               {/* Right End Dot (matching screenshot) */}
@@ -524,26 +540,30 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             </div>
           </div>
 
-          {/* Time Labels */}
-          <div className="flex justify-between items-center text-[13px] font-medium text-white/90 px-0.5 -mt-1">
-            <span>{formatTime(activeSec)}</span>
-            <span>{formatTime(durationSec)}</span>
+          {/* Time Labels & Atmos Dynamic Badge */}
+          <div className="flex justify-between items-center text-[12px] font-medium text-white/80 px-1 -mt-1">
+            <span className="font-mono">{formatTime(activeSec)}</span>
+            <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-white/60 tracking-wider">
+              <span className="material-symbols-outlined text-[13px] text-[var(--color-primary)] animate-pulse">graphic_eq</span>
+              <span>Streamzy Atmos</span>
+            </div>
+            <span className="font-mono">-{formatTime(Math.max(0, durationSec - activeSec))}</span>
           </div>
         </div>
 
-        {/* 5. Main Controls Row (Exact Screenshot: Shuffle, Prev, Center Play/Pause, Next, Repeat) */}
-        <div className="w-full flex items-center justify-between px-2 shrink-0 mb-4">
+        {/* 5. Main Controls Row (Shuffle, Prev, Center Play/Pause, Next, Repeat) */}
+        <div className="w-full flex items-center justify-between px-1 shrink-0 mb-3">
           {/* Shuffle Mode */}
           <button
             id="now-playing-shuffle-btn"
             aria-label="Shuffle mode"
             onClick={onToggleShuffle}
-            className={`w-11 h-11 flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
-              isShuffle ? 'text-white' : 'text-white/50 hover:text-white/80'
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-90 cursor-pointer ${
+              isShuffle ? 'text-white bg-white/10' : 'text-white/50 hover:text-white/80'
             }`}
           >
             <span
-              className="material-symbols-outlined floating-icon text-[24px]"
+              className="material-symbols-outlined floating-icon text-[22px]"
               style={isShuffle ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               shuffle
@@ -555,7 +575,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="now-playing-prev-btn"
             aria-label="Previous track"
             onClick={handleSmartPrev}
-            className="w-12 h-12 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer shadow-md floating-btn"
+            className="w-12 h-12 rounded-2xl bg-white/15 hover:bg-white/25 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer shadow-md floating-btn border border-white/10"
           >
             <span
               className="material-symbols-outlined floating-icon text-[26px]"
@@ -565,15 +585,15 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             </span>
           </button>
 
-          {/* Primary Play / Pause Button (Large squircle with black icon) */}
+          {/* Primary Play / Pause Button (Squircle with dynamic theme background & glow) */}
           <button
             id="now-playing-play-pause-btn"
             aria-label={isPlaying ? 'Pause' : 'Play'}
             onClick={onTogglePlay}
-            className="w-15 h-15 rounded-2xl bg-white text-black shadow-2xl hover:scale-105 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center transition-all duration-300 cursor-pointer"
+            className="w-16 h-16 rounded-[22px] bg-white text-black shadow-[0_8px_32px_var(--dynamic-glow,rgba(255,255,255,0.4))] hover:scale-105 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center transition-all duration-300 cursor-pointer border border-white/20"
           >
             <span
-              className="material-symbols-outlined floating-icon text-[32px] text-black"
+              className="material-symbols-outlined floating-icon text-[34px] text-black"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               {isPlaying ? 'pause' : 'play_arrow'}
@@ -585,7 +605,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="now-playing-next-btn"
             aria-label="Next track"
             onClick={onNextTrack}
-            className="w-12 h-12 rounded-xl bg-white/15 hover:bg-white/25 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center text-white transition-all duration-300 cursor-pointer shadow-md"
+            className="w-12 h-12 rounded-2xl bg-white/15 hover:bg-white/25 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center text-white transition-all duration-300 cursor-pointer shadow-md border border-white/10"
           >
             <span
               className="material-symbols-outlined floating-icon text-[26px]"
@@ -601,12 +621,12 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             aria-label={repeatMode === 'one' ? 'Repeat one track' : repeatMode === 'all' ? 'Repeat entire queue' : 'Repeat off'}
             title={repeatMode === 'one' ? 'Repeat One' : repeatMode === 'all' ? 'Repeat Queue' : 'Repeat Off'}
             onClick={onToggleRepeat}
-            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-300 active:scale-90 hover:-translate-y-0.5 cursor-pointer relative ${
-              repeatMode !== 'off' ? 'text-white' : 'text-white/50 hover:text-white/80'
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 active:scale-90 hover:-translate-y-0.5 cursor-pointer relative ${
+              repeatMode !== 'off' ? 'text-white bg-white/10' : 'text-white/50 hover:text-white/80'
             }`}
           >
             <span
-              className="material-symbols-outlined floating-icon text-[24px]"
+              className="material-symbols-outlined floating-icon text-[22px]"
               style={repeatMode !== 'off' ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {repeatMode === 'one' ? 'repeat_one' : 'repeat'}
@@ -617,36 +637,81 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
           </button>
         </div>
 
-        {/* 6. Bottom Secondary Navigation Row (Queue, Sleep Timer, Lyrics, More) */}
-        <nav className="w-full flex items-center justify-around pt-3 border-t border-white/10 shrink-0 text-white/80">
-          {/* Queue Button */}
+        {/* 6. Hardware / Acoustic Output Module (Bluetooth / DAC) */}
+        <div className="w-full px-3.5 py-2.5 rounded-2xl bg-black/25 backdrop-blur-md border border-white/10 flex items-center justify-between shrink-0 mb-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
+              <span className="material-symbols-outlined text-[16px]">headphones</span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[12px] font-semibold text-white truncate">
+                Active Audio Stream • 96kHz Lossless
+              </span>
+              <span className="text-[10px] text-white/60 truncate">
+                High-Resolution Streamzy Engine
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowMenuModal(true)}
+            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10.5px] font-bold transition-all cursor-pointer shrink-0"
+          >
+            Route
+          </button>
+        </div>
+
+        {/* 7. Bento Quick Actions (Sound Profile & Sleep Timer) */}
+        <div className="w-full grid grid-cols-2 gap-2 shrink-0 mb-2">
+          {/* Sound Profile Tile */}
+          <button
+            onClick={() => setShowMenuModal(true)}
+            className="p-2.5 rounded-2xl bg-black/20 hover:bg-black/30 backdrop-blur-md border border-white/10 flex items-center gap-2.5 text-left transition-all cursor-pointer group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-[var(--color-primary)] shrink-0 transition-colors">
+              <span className="material-symbols-outlined text-[16px]">graphic_eq</span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-white truncate">Profile EQ</span>
+              <span className="text-[10px] text-white/60 truncate capitalize">{settings.equalizerPreset || 'Dynamic'}</span>
+            </div>
+          </button>
+
+          {/* Sleep Timer Tile */}
+          <button
+            onClick={() => setShowSleepModal(true)}
+            className="p-2.5 rounded-2xl bg-black/20 hover:bg-black/30 backdrop-blur-md border border-white/10 flex items-center gap-2.5 text-left transition-all cursor-pointer group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-amber-300 shrink-0 transition-colors">
+              <span className="material-symbols-outlined text-[16px]">nightlight</span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-white truncate">Sleep Timer</span>
+              <span className="text-[10px] text-white/60 truncate">
+                {settings.sleepTimerRemaining ? `${settings.sleepTimerRemaining}m left` : 'Off'}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {/* 8. Bottom Up Next Peek Drawer Button */}
+        <nav className="w-full flex items-center justify-between pt-2 border-t border-white/10 shrink-0 text-white/80">
           <button
             id="open-queue-btn"
             aria-label="Open queue"
             onClick={() => setShowQueue(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer flex-1 min-w-0 mr-2"
           >
-            <span className="material-symbols-outlined floating-icon text-[20px]">format_list_bulleted</span>
-            <span className="text-[13px] font-medium">Queue</span>
-          </button>
-
-          {/* Sleep Timer Button */}
-          <button
-            id="open-sleep-btn"
-            aria-label="Sleep timer"
-            onClick={() => setShowSleepModal(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer relative"
-          >
-            <span
-              className={`material-symbols-outlined text-[20px] ${
-                settings.sleepTimerRemaining ? 'text-amber-300' : 'text-white/80'
-              }`}
-            >
-              nightlight
-            </span>
-            {settings.sleepTimerRemaining && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            )}
+            <span className="material-symbols-outlined floating-icon text-[19px] text-[var(--color-primary)]">format_list_bulleted</span>
+            <div className="flex flex-col min-w-0 text-left">
+              <span className="text-[12px] font-semibold text-white truncate">
+                Up Next • {queue.length > 0 ? `${queue.length} Tracks` : 'Auto Radio'}
+              </span>
+              {queue.length > 0 && (
+                <span className="text-[10px] text-white/60 truncate">
+                  Next: {queue[0]?.title}
+                </span>
+              )}
+            </div>
           </button>
 
           {/* Lyrics Button */}
@@ -654,12 +719,12 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="toggle-lyrics-bottom-btn"
             aria-label="Toggle lyrics"
             onClick={() => setShowLyrics(!showLyrics)}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer ${
-              showLyrics ? 'bg-white/20 text-white' : ''
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer ${
+              showLyrics ? 'bg-white/20 text-white font-bold' : 'text-white/80'
             }`}
           >
-            <span className="material-symbols-outlined floating-icon text-[20px]">notes</span>
-            <span className="text-[13px] font-medium">Lyrics</span>
+            <span className="material-symbols-outlined floating-icon text-[19px]">lyrics</span>
+            <span className="text-[12px] font-medium">Lyrics</span>
           </button>
 
           {/* More Options Button */}
@@ -667,9 +732,9 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="open-more-menu-btn"
             aria-label="More options"
             onClick={() => setShowMenuModal(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-white/10 active:scale-95 transition-all cursor-pointer text-white/80 hover:text-white"
           >
-            <span className="material-symbols-outlined floating-icon text-[22px]">more_vert</span>
+            <span className="material-symbols-outlined floating-icon text-[20px]">more_vert</span>
           </button>
         </nav>
 

@@ -7,12 +7,10 @@ import { audioEngine } from '../utils/audioPlayer';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { MiniPlayer } from '../components/MiniPlayer';
-import { BackgroundPermissionModal } from '../components/BackgroundPermissionModal';
 import { BootSplashScreen } from '../components/BootSplashScreen';
 import { MusicVideoModal } from '../components/MusicVideoModal';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { NetworkOfflineBanner } from "../components/NetworkOfflineBanner";
-import { AccountSyncModal } from '../components/AccountSyncModal';
 
 
 const HomeScreen = lazy(() => import('../components/HomeScreen').then(m => ({ default: m.HomeScreen })));
@@ -76,7 +74,6 @@ export function useMusicApp() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTimeSec, setCurrentTimeSec] = useState<number>(0);
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState<boolean>(false);
-  const [isAccountSyncOpen, setIsAccountSyncOpen] = useState<boolean>(false);
   const [showBackgroundPermission, setShowBackgroundPermission] = useState<boolean>(() => {
     try {
       return localStorage.getItem('vd_background_playback_permission') === null;
@@ -437,9 +434,7 @@ export function useMusicApp() {
     const setupBackButton = async () => {
       try {
         backButtonHandle = await CapApp.addListener('backButton', () => {
-          if (isAccountSyncOpen) {
-            setIsAccountSyncOpen(false);
-          } else if (isNowPlayingOpen) {
+          if (isNowPlayingOpen) {
             setIsNowPlayingOpen(false);
           } else if (activeScreen !== 'home') {
             setActiveScreen('home');
@@ -455,9 +450,7 @@ export function useMusicApp() {
     setupBackButton();
 
     const handlePopState = () => {
-      if (isAccountSyncOpen) {
-        setIsAccountSyncOpen(false);
-      } else if (isNowPlayingOpen) {
+      if (isNowPlayingOpen) {
         setIsNowPlayingOpen(false);
       } else if (activeScreen !== 'home') {
         setActiveScreen('home');
@@ -472,15 +465,15 @@ export function useMusicApp() {
       }
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [isAccountSyncOpen, isNowPlayingOpen, activeScreen]);
+  }, [isNowPlayingOpen, activeScreen]);
 
   // Push history state whenever user enters a subview or modal
   useEffect(() => {
     window.history.pushState(
-      { screen: activeScreen, nowPlaying: isNowPlayingOpen, accountSync: isAccountSyncOpen },
+      { screen: activeScreen, nowPlaying: isNowPlayingOpen },
       ''
     );
-  }, [activeScreen, isNowPlayingOpen, isAccountSyncOpen]);
+  }, [activeScreen, isNowPlayingOpen]);
 
   // Handle equalizer preset updates
   useEffect(() => {
@@ -1257,7 +1250,6 @@ export function useMusicApp() {
     isPlaying, setIsPlaying, handleTogglePlay,
     currentTimeSec, setCurrentTimeSec, handleSeek,
     isNowPlayingOpen, setIsNowPlayingOpen,
-    isAccountSyncOpen, setIsAccountSyncOpen,
     showBackgroundPermission, setShowBackgroundPermission, handleAllowBackgroundPermission, handleDismissBackgroundPermission,
     settings, handleUpdateSettings,
     originalQueue, shuffledQueue, isShuffle, handleToggleShuffle, queue,
