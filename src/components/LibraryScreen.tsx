@@ -284,7 +284,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
               key={tab.id}
               id={`lib-tab-${tab.id}`}
               onClick={() => handleSwitchTab(tab.id as any)}
-              className={`h-9 px-3.5 sm:px-4 rounded-full text-[13px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+              className={`h-9 px-3.5 sm:px-4 rounded-xl text-[13px] font-bold flex items-center gap-1.5 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer shrink-0 ${
                 isActive
                   ? 'bg-[var(--color-primary)] text-[#670211] shadow-md'
                   : 'bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08] text-[#a1a1aa] hover:text-[#e4e1e7] hover:bg-white/[0.1]'
@@ -702,7 +702,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                       e.stopPropagation();
                       handlePlayQueueInternal(likedTracks, 0);
                     }}
-                    className="px-4 py-2 rounded-full bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
                   >
                     <span className="material-symbols-outlined floating-icon text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                       play_arrow
@@ -726,7 +726,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
               <button
                 id="create-playlist-btn"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-3 py-1.5 rounded-full bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
               >
                 <span className="material-symbols-outlined floating-icon text-[16px]">add</span>
                 New Playlist

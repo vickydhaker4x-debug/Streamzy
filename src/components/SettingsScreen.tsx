@@ -182,7 +182,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           id="check-update-btn"
           onClick={handleUpdateClick}
           disabled={checkingUpdate}
-          className="relative px-3.5 py-1.5 rounded-full liquid-glass text-[#e4e1e7] text-[12px] font-semibold flex items-center gap-1 shrink-0 hover:bg-white/[0.2] hover:scale-105 hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] transition-colors active:scale-95 cursor-pointer border border-white/[0.04] floating-btn"
+          className="relative px-3.5 py-1.5 rounded-xl liquid-glass text-[#e4e1e7] text-[12px] font-semibold flex items-center gap-1 shrink-0 hover:bg-white/[0.2] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] transition-all duration-300 active:scale-95 cursor-pointer border border-white/[0.04]"
         >
           {updateAvailable && (
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#1b1b1f] z-10 animate-pulse" />
@@ -801,10 +801,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <button
               onClick={handleClearCache}
               disabled={cacheCleared}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all cursor-pointer border ${
+              className={`px-3.5 py-1.5 rounded-xl text-[12px] font-semibold transition-all duration-300 hover:-translate-y-0.5 cursor-pointer border ${
                 cacheCleared
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                  : 'liquid-glass text-[#e4e1e7] border-white/[0.05] hover:bg-white/[0.2] hover:scale-105 hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] active:scale-95'
+                  : 'liquid-glass text-[#e4e1e7] border-white/[0.05] hover:bg-white/[0.2] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] active:scale-95'
               }`}
             >
               {cacheCleared ? 'Cleared' : 'Clear Cache'}
@@ -834,7 +834,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     window.location.reload();
                   }, 400);
                 }}
-                className="px-3.5 py-1.5 rounded-full text-[12px] font-semibold liquid-glass text-[#e4e1e7] border border-white/[0.05] hover:bg-white/[0.2] hover:scale-105 transition-all cursor-pointer active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl text-[12px] font-semibold liquid-glass text-[#e4e1e7] border border-white/[0.05] hover:bg-white/[0.2] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer active:scale-95"
               >
                 Restart
               </button>
@@ -852,7 +852,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     }, 400);
                   }
                 }}
-                className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:scale-105 transition-all cursor-pointer active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer active:scale-95"
               >
                 Reset All
               </button>

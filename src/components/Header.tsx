@@ -72,38 +72,38 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Action icons */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Equalizer */}
-          <button
-            id="header-eq-btn"
-            onClick={onOpenEqualizer}
-            className="w-9 h-9 rounded-full bg-[#180E1B] hover:bg-[#2A162D] text-[#FE385E] flex items-center justify-center transition border border-[#301B34] cursor-pointer"
-            title="10-Band Equalizer"
-          >
-            <span className="material-symbols-outlined text-[19px]">equalizer</span>
-          </button>
-
-          {/* Settings */}
-          {onOpenSettings && (
             <button
-              id="header-settings-btn"
-              onClick={onOpenSettings}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition border border-[#301B34] cursor-pointer ${
-                activeScreen === 'settings'
-                  ? 'bg-[#FE385E] text-white'
-                  : 'bg-[#180E1B] hover:bg-[#2A162D] text-[#DAEAF7]'
-              }`}
-              title="App Settings"
+              id="header-eq-btn"
+              onClick={onOpenEqualizer}
+              className="w-9 h-9 rounded-xl bg-[#180E1B] hover:bg-[#2A162D] text-[#FE385E] flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer"
+              title="10-Band Equalizer"
             >
-              <span className="material-symbols-outlined text-[19px]">settings</span>
+              <span className="material-symbols-outlined text-[19px]">equalizer</span>
             </button>
-          )}
 
-          {/* Account Profile / Sync Button */}
-          <button
-            id="header-account-btn"
-            aria-label="Account & Sync"
-            onClick={onOpenAccountSync}
-            className="relative w-8 h-8 rounded-full bg-[#FE385E] text-white flex items-center justify-center shadow-[0_0_14px_rgba(254,56,94,0.4)] hover:brightness-110 active:scale-90 transition shrink-0 ml-1 cursor-pointer font-bold text-[12px]"
-            title="Cloud Sync"
+            {/* Settings */}
+            {onOpenSettings && (
+              <button
+                id="header-settings-btn"
+                onClick={onOpenSettings}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer ${
+                  activeScreen === 'settings'
+                    ? 'bg-[#FE385E] text-white'
+                    : 'bg-[#180E1B] hover:bg-[#2A162D] text-[#DAEAF7]'
+                }`}
+                title="App Settings"
+              >
+                <span className="material-symbols-outlined text-[19px]">settings</span>
+              </button>
+            )}
+
+            {/* Account Profile / Sync Button */}
+            <button
+              id="header-account-btn"
+              aria-label="Account & Sync"
+              onClick={onOpenAccountSync}
+              className="relative w-9 h-9 rounded-xl bg-[#FE385E] text-white flex items-center justify-center shadow-[0_0_14px_rgba(254,56,94,0.4)] hover:brightness-110 active:scale-95 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg shrink-0 ml-1 cursor-pointer font-bold text-[12px]"
+              title="Cloud Sync"
           >
             {userName ? (
               <span>{getUserInitials(userName)}</span>

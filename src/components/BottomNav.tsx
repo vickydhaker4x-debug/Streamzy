@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { ActiveScreen } from '../types';
 
 interface BottomNavProps {
@@ -20,7 +21,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav 
       id="bottom-navigation"
-      className="fixed bottom-0 w-full z-40 pb-safe liquid-glass-heavy"
+      className="fixed bottom-0 w-full z-40 pb-safe liquid-glass-heavy border-t border-white/[0.08] shadow-[0_-8px_32px_rgba(0,0,0,0.5)] gpu-layer"
     >
       <div className="h-16 px-4 flex items-center justify-around max-w-lg mx-auto">
         {tabs.map((tab) => {
@@ -30,19 +31,26 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               key={tab.id}
               id={`nav-tab-${tab.id}`}
               onClick={() => onSelectScreen(tab.id)}
-              className={`flex flex-col items-center justify-center min-w-[64px] h-12 transition-all active:scale-90 cursor-pointer ${
+              className={`relative flex flex-col items-center justify-center min-w-[72px] h-12 rounded-xl transition-all duration-300 active:scale-95 cursor-pointer hover:-translate-y-0.5 ${
                 isActive 
-                  ? 'text-[var(--color-primary)] font-bold scale-105' 
-                  : 'text-[#a1a1aa] hover:text-[#e4e1e7]'
+                  ? 'text-[var(--color-primary)] font-bold' 
+                  : 'text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-white/[0.04]'
               }`}
             >
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabPill"
+                  className="absolute inset-0 rounded-xl bg-[var(--color-primary)]/[0.12] border border-[var(--color-primary)]/25 -z-10 shadow-[0_0_16px_rgba(254,56,94,0.18)]"
+                  transition={{ type: 'spring', damping: 26, stiffness: 350 }}
+                />
+              )}
               <span 
                 className="material-symbols-outlined floating-icon text-[24px]"
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
                 {tab.icon}
               </span>
-              <span className="text-[11px] font-semibold mt-1 tracking-tight">
+              <span className="text-[11px] font-semibold mt-0.5 tracking-tight">
                 {tab.label}
               </span>
             </button>

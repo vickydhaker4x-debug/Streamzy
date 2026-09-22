@@ -5,6 +5,7 @@ import { searchTracks, getAudioStreamUrl } from '../utils/pipedApi';
 import { TrackImage } from './TrackImage';
 import { SearchSuggestions } from './SearchSuggestions';
 import { searchEngine, normalizeSearchQuery } from '../services/searchEngine';
+import { deduplicateTracks } from '../services/musicNormalizationService';
 import { extractAlbums, extractArtists, EnrichedAlbum, EnrichedArtist } from '../services/libraryDataService';
 import { AlbumDetailView } from './library/AlbumDetailView';
 import { ArtistDetailView } from './library/ArtistDetailView';
@@ -96,7 +97,16 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     setTimeout(() => setSearchToast(null), 2500);
   };
 
-  // Real-time debounced query synchronization: guarantees live searching as the user types
+  const handleExecuteSearch = (term?: string) => {
+    const queryToSearch = (term !== undefined ? term : inputQuery).trim();
+    if (!queryToSearch) return;
+    setInputQuery(queryToSearch);
+    setActiveQuery(queryToSearch);
+    saveRecentSearch(queryToSearch);
+    setShowSuggestions(false);
+  };
+
+  // Real-time debounced query synchronization: guarantees live searching as the user types even for a single word
   useEffect(() => {
     const trimmed = inputQuery.trim();
     if (!trimmed) {
@@ -106,7 +116,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     }
     const timer = setTimeout(() => {
       setActiveQuery(trimmed);
-    }, 280);
+    }, 200);
     return () => clearTimeout(timer);
   }, [inputQuery]);
 
@@ -205,7 +215,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     };
   }, []);
 
-  // Online search when active query is set, with millisecond-exact offline fallback
+  // Online search when active query is set, with instant local preview and fallback
   useEffect(() => {
     const trimmed = activeQuery.trim();
     if (!trimmed) {
@@ -216,10 +226,14 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     }
 
     const currentReqId = ++searchRequestIdRef.current;
-    // Clear previous online results immediately to prevent stale results
-    setLiveOnlineResults([]);
     setIsSearchingOnline(true);
     setSearchError(null);
+
+    // Provide instant local feedback so user immediately sees matches with zero waiting
+    const localMatches = searchEngine.rankAndFilterTracks(TRACKS, trimmed);
+    if (localMatches.length > 0) {
+      setLiveOnlineResults(localMatches);
+    }
 
     let isMounted = true;
     const abortController = new AbortController();
@@ -227,9 +241,9 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     // Exact millisecond network drop check: halt API calls and switch to local database
     if (networkMonitorService.isOffline() || offlineService.isOfflineOnlyMode()) {
       setIsSearchingOnline(false);
-      offlineDatabaseService.searchOfflineTracks(trimmed).then((localMatches) => {
+      offlineDatabaseService.searchOfflineTracks(trimmed).then((dbMatches) => {
         if (isMounted && searchRequestIdRef.current === currentReqId) {
-          const ranked = searchEngine.rankAndFilterTracks(localMatches, trimmed);
+          const ranked = searchEngine.rankAndFilterTracks([...dbMatches, ...TRACKS], trimmed);
           setLiveOnlineResults(ranked);
         }
       });
@@ -246,18 +260,30 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
           if (results && results.length > 0) {
             // Strictly rank and filter online tracks against query
             const rankedOnline = searchEngine.rankAndFilterTracks(results, trimmed);
-            setLiveOnlineResults(rankedOnline);
+            if (rankedOnline.length > 0) {
+              setLiveOnlineResults(rankedOnline);
+            } else {
+              // If ranking was strict, still display the online tracks with metadata match
+              setLiveOnlineResults(
+                results.map((r) => ({
+                  ...r,
+                  thumbnail: r.coverUrl || r.albumArt || '',
+                  matchType: 'metadata_match' as const,
+                  relevanceScore: 150
+                }))
+              );
+            }
           } else {
-            const localMatches = await offlineDatabaseService.searchOfflineTracks(trimmed);
-            const rankedOffline = searchEngine.rankAndFilterTracks(localMatches, trimmed);
+            const dbMatches = await offlineDatabaseService.searchOfflineTracks(trimmed);
+            const rankedOffline = searchEngine.rankAndFilterTracks([...dbMatches, ...TRACKS], trimmed);
             setLiveOnlineResults(rankedOffline);
           }
         }
       } catch (err: any) {
         if (isMounted && searchRequestIdRef.current === currentReqId) {
           if (err?.name !== 'AbortError') {
-            const localMatches = await offlineDatabaseService.searchOfflineTracks(trimmed);
-            const rankedOffline = searchEngine.rankAndFilterTracks(localMatches, trimmed);
+            const dbMatches = await offlineDatabaseService.searchOfflineTracks(trimmed);
+            const rankedOffline = searchEngine.rankAndFilterTracks([...dbMatches, ...TRACKS], trimmed);
             setLiveOnlineResults(rankedOffline);
           }
         }
@@ -268,13 +294,10 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
       }
     };
 
-    const timeoutId = setTimeout(() => {
-      fetchOnline();
-    }, 350);
+    fetchOnline();
 
     return () => {
       isMounted = false;
-      clearTimeout(timeoutId);
       abortController.abort();
     };
   }, [activeQuery, isOffline]);
@@ -605,7 +628,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
               id={`search-download-btn-${track.id}`}
               title={isDownloaded ? 'Downloaded in offline vault' : 'Download for offline listening'}
               onClick={(e) => handleToggleDownload(track, e)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer ${
                 isDownloaded
                   ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
                   : isDownloading
@@ -628,7 +651,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                   setSearchToast(`"${track.title}" set to play next`);
                   setTimeout(() => setSearchToast(null), 2000);
                 }}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">
                   playlist_play
@@ -646,7 +669,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                   setSearchToast(`Added "${track.title}" to Up Next`);
                   setTimeout(() => setSearchToast(null), 2000);
                 }}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">
                   playlist_add
@@ -662,7 +685,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                   e.stopPropagation();
                   onToggleFavorite(track.id);
                 }}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-rose-400 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 active:scale-90 cursor-pointer"
               >
                 <span 
                   className="material-symbols-outlined text-[18px] text-[var(--color-primary)]"
@@ -690,20 +713,53 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     );
   };
 
+  // Related search phrases for the search word
+  const relatedSearchPhrases = useMemo(() => {
+    const q = activeQuery.trim();
+    if (!q) return [];
+    return [
+      `${q} song`,
+      `${q} remix`,
+      `${q} lofi`,
+      `${q} lyrics`,
+      `${q} slowed & reverb`,
+      `${q} acoustic`,
+      `${q} hits`
+    ];
+  }, [activeQuery]);
+
+  // Songs specifically related to the search word
+  const relatedSongsForSearchWord = useMemo(() => {
+    const q = activeQuery.trim();
+    if (!q) return [];
+    const norm = normalizeSearchQuery(q);
+    const combined = [...liveOnlineResults, ...contextualResults.songs, ...TRACKS];
+    const unique = deduplicateTracks(combined);
+    return unique
+      .filter((t) => {
+        const titleNorm = normalizeSearchQuery(t.title);
+        const artistNorm = normalizeSearchQuery(t.artist);
+        const genreNorm = normalizeSearchQuery(t.genre || '');
+        return (
+          titleNorm.includes(norm) ||
+          artistNorm.includes(norm) ||
+          genreNorm.includes(norm) ||
+          titleNorm.split(' ').some((w) => w.startsWith(norm)) ||
+          artistNorm.split(' ').some((w) => w.startsWith(norm))
+        );
+      })
+      .slice(0, 6);
+  }, [activeQuery, liveOnlineResults, contextualResults.songs]);
+
   return (
     <div id="search-screen-view" className="flex flex-col w-full px-4 sm:px-6 gap-4 pb-28 max-w-4xl mx-auto animate-fade-in">
       {/* Search Input Bar */}
       <div ref={searchContainerRef} className="relative w-full mt-2 z-30">
-        <div className="flex items-center w-full h-12 bg-white/[0.06] backdrop-blur-2xl rounded-2xl px-4 border border-white/[0.08] shadow-lg focus-within:border-red-500 transition-colors">
+        <div className="flex items-center w-full h-12 bg-white/[0.06] backdrop-blur-2xl rounded-2xl px-3 sm:px-4 border border-white/[0.08] shadow-lg focus-within:border-red-500 hover:border-white/20 transition-all duration-300 hover:-translate-y-0.5">
           <button
-            onClick={() => {
-              if (inputQuery.trim()) {
-                setActiveQuery(inputQuery.trim());
-                saveRecentSearch(inputQuery.trim());
-                setShowSuggestions(false);
-              }
-            }}
-            className="material-symbols-outlined floating-icon text-zinc-400 hover:text-red-400 text-[22px] mr-3 cursor-pointer transition-colors"
+            type="button"
+            onClick={() => handleExecuteSearch()}
+            className="material-symbols-outlined floating-icon text-zinc-400 hover:text-red-400 text-[22px] mr-2.5 cursor-pointer transition-colors"
           >
             {isSearchingOnline ? 'sync' : 'search'}
           </button>
@@ -717,10 +773,9 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
               setShowSuggestions(true);
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && inputQuery.trim()) {
-                setActiveQuery(inputQuery.trim());
-                setShowSuggestions(false);
-                saveRecentSearch(inputQuery.trim());
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleExecuteSearch();
               } else if (e.key === 'Escape') {
                 setShowSuggestions(false);
               }
@@ -730,17 +785,30 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
           />
           {inputQuery && (
             <button
+              type="button"
               onClick={() => {
                 setInputQuery('');
                 setActiveQuery('');
                 setLiveOnlineResults([]);
                 setShowSuggestions(true);
               }}
-              className="text-zinc-400 hover:text-white p-1 cursor-pointer"
+              className="text-zinc-400 hover:text-white p-1 cursor-pointer mr-1"
             >
               <span className="material-symbols-outlined floating-icon text-[18px]">close</span>
             </button>
           )}
+
+          {/* Dedicated Search Action Button with curved corners and floating lift */}
+          <button
+            id="search-action-btn"
+            type="button"
+            onClick={() => handleExecuteSearch()}
+            title="Search"
+            className="ml-1 px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#FE385E] to-[#FF4365] hover:brightness-110 active:scale-95 text-white text-[12px] sm:text-[13px] font-bold shadow-md shadow-rose-950/40 flex items-center gap-1.5 shrink-0 cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+          >
+            <span className="material-symbols-outlined text-[17px]">search</span>
+            <span className="hidden xs:inline sm:inline">Search</span>
+          </button>
         </div>
 
         {/* Live Search Suggestions Dropdown */}
@@ -839,6 +907,81 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
             )}
           </div>
           <span>{totalResultsCount} items</span>
+        </div>
+      )}
+
+      {/* Related Suggestions & Songs for Search Word */}
+      {activeQuery.trim().length > 0 && (
+        <div className="flex flex-col gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] backdrop-blur-md shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#FE385E] text-[18px]">auto_awesome</span>
+              <span className="text-[13px] font-bold text-white">
+                Related to &ldquo;{activeQuery}&rdquo;
+              </span>
+            </div>
+            <span className="text-[11px] text-zinc-400">Suggestions</span>
+          </div>
+
+          {/* Related search query chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {relatedSearchPhrases.map((phrase) => (
+              <button
+                key={phrase}
+                type="button"
+                onClick={() => handleExecuteSearch(phrase)}
+                className="px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.14] text-zinc-300 hover:text-white text-[12px] font-medium border border-white/[0.08] transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 hover:-translate-y-0.5 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[14px] text-zinc-400">search</span>
+                <span>{phrase}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Related song cards for the search word */}
+          {relatedSongsForSearchWord.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-0.5">
+              {relatedSongsForSearchWord.slice(0, 4).map((track) => (
+                <div
+                  key={`rel-word-${track.id}`}
+                  onClick={() => handleTrackClick(track)}
+                  className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.04] transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-zinc-800">
+                      <img
+                        src={track.coverUrl || track.albumArt || '/streamzy_logo.jpg'}
+                        alt={track.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span className="material-symbols-outlined text-white text-[20px]">play_arrow</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[13px] font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
+                        {track.title}
+                      </span>
+                      <span className="text-[11px] text-zinc-400 truncate">
+                        {track.artist}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTrackClick(track);
+                    }}
+                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-[#FE385E] text-zinc-300 hover:text-white flex items-center justify-center transition-colors shrink-0"
+                    title="Play track"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -11,7 +11,7 @@ export interface Track {
   durationSec: number;
   audioUrl?: string;
   streamUrl?: string; // Synced with audioUrl
-  source?: 'youtube' | 'local' | 'piped' | 'invidious' | 'server' | 'jiosaavn';
+  source?: 'youtube' | 'local' | 'piped' | 'invidious' | 'server' | 'jiosaavn' | 'itunes';
   genre?: string;
   language?: string;
   releaseYear?: string;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { Track, SettingsState } from '../types';
 import { TRACKS } from '../data/musicData';
 import { TrackImage } from './TrackImage';
@@ -217,9 +218,13 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
   const displayQueue = queue && queue.length > 0 ? queue : TRACKS;
 
   return (
-    <div
+    <motion.div
       id="now-playing-fullscreen"
-      className="fixed inset-0 z-50 flex flex-col select-none overflow-hidden transition-all duration-700 ease-out"
+      initial={{ y: '100%', opacity: 0.95 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: '100%', opacity: 0.95 }}
+      transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
+      className="fixed inset-0 z-50 flex flex-col select-none overflow-hidden gpu-layer"
       style={{
         background: palette.gradientCss
       }}
@@ -266,7 +271,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="now-playing-close-btn"
             aria-label="Minimize player"
             onClick={onClose}
-            className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full text-white/90 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer floating-btn"
+            className="w-10 h-10 -ml-2 flex items-center justify-center rounded-xl text-white/90 hover:text-white hover:bg-white/10 hover:-translate-y-0.5 active:scale-90 transition-all duration-300 cursor-pointer"
           >
             <span className="material-symbols-outlined floating-icon text-[28px]">keyboard_arrow_down</span>
           </button>
@@ -284,7 +289,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             <button
               aria-label="Audio options"
               onClick={() => setShowMenuModal(true)}
-              className="w-10 h-10 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-white/80 hover:text-white hover:bg-white/10 hover:-translate-y-0.5 active:scale-90 transition-all duration-300 cursor-pointer"
             >
               <span className="material-symbols-outlined floating-icon text-[20px]">tune</span>
             </button>
@@ -553,12 +558,12 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             </span>
           </button>
 
-          {/* Primary Play / Pause Button (Large pure white circle with black icon) */}
+          {/* Primary Play / Pause Button (Large squircle with black icon) */}
           <button
             id="now-playing-play-pause-btn"
             aria-label={isPlaying ? 'Pause' : 'Play'}
             onClick={onTogglePlay}
-            className="w-15 h-15 rounded-full bg-white text-black shadow-2xl hover:scale-105 active:scale-95 flex items-center justify-center transition-all cursor-pointer floating-btn"
+            className="w-15 h-15 rounded-2xl bg-white text-black shadow-2xl hover:scale-105 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center transition-all duration-300 cursor-pointer"
           >
             <span
               className="material-symbols-outlined floating-icon text-[32px] text-black"
@@ -573,7 +578,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="now-playing-next-btn"
             aria-label="Next track"
             onClick={onNextTrack}
-            className="w-12 h-12 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer shadow-md floating-btn"
+            className="w-12 h-12 rounded-xl bg-white/15 hover:bg-white/25 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center text-white transition-all duration-300 cursor-pointer shadow-md"
           >
             <span
               className="material-symbols-outlined floating-icon text-[26px]"
@@ -589,7 +594,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             aria-label={repeatMode === 'one' ? 'Repeat one track' : repeatMode === 'all' ? 'Repeat entire queue' : 'Repeat off'}
             title={repeatMode === 'one' ? 'Repeat One' : repeatMode === 'all' ? 'Repeat Queue' : 'Repeat Off'}
             onClick={onToggleRepeat}
-            className={`w-11 h-11 flex items-center justify-center transition-all active:scale-90 cursor-pointer relative ${
+            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-300 active:scale-90 hover:-translate-y-0.5 cursor-pointer relative ${
               repeatMode !== 'off' ? 'text-white' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -612,7 +617,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="open-queue-btn"
             aria-label="Open queue"
             onClick={() => setShowQueue(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer"
           >
             <span className="material-symbols-outlined floating-icon text-[20px]">format_list_bulleted</span>
             <span className="text-[13px] font-medium">Queue</span>
@@ -623,7 +628,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="open-sleep-btn"
             aria-label="Sleep timer"
             onClick={() => setShowSleepModal(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 active:scale-95 transition-all cursor-pointer relative"
+            className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer relative"
           >
             <span
               className={`material-symbols-outlined text-[20px] ${
@@ -642,7 +647,7 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             id="toggle-lyrics-bottom-btn"
             aria-label="Toggle lyrics"
             onClick={() => setShowLyrics(!showLyrics)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/10 active:scale-95 transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl hover:bg-white/10 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer ${
               showLyrics ? 'bg-white/20 text-white' : ''
             }`}
           >
@@ -956,6 +961,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

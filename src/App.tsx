@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { App as CapApp } from '@capacitor/app';
 import { Track, ActiveScreen, SettingsState, MusicMix, MusicVideoItem, PlaybackContext, RepeatMode } from './types';
 import { TRACKS, INITIAL_SETTINGS } from './data/musicData';
@@ -1293,103 +1294,116 @@ export default function App() {
         <NetworkOfflineBanner onOpenDownloads={() => setActiveScreen('library')} />
 
         <Suspense fallback={<div className="flex w-full h-full items-center justify-center pt-24"><span className="material-symbols-outlined floating-icon text-4xl text-red-500 animate-spin">progress_activity</span></div>}>
-          {activeScreen === 'home' && (
-            <HomeScreen
-              tracks={activeDisplayTracks}
-              favoriteTrackIds={favoriteTrackIds}
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              personalizedData={personalizedHome || undefined}
-              playbackHistory={playbackHistory}
-              userName={userName}
-              onSelectTrack={handleSelectTrack}
-              onTogglePlay={handleTogglePlay}
-              onToggleFavorite={handleToggleFavorite}
-              onOpenVideo={setActiveVideo}
-              onPlayMix={handlePlayMix}
-              onOpenColdStart={() => setIsOnboardingOpen(true)}
-              onNavigateToSearch={(query, source) => {
-                if (query !== undefined) setSearchQuery(query);
-                if (source) setSearchSource(source as any);
-                setActiveScreen('search');
-              }}
-            />
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeScreen}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
+              className="w-full min-h-full gpu-layer"
+            >
+              {activeScreen === 'home' && (
+                <HomeScreen
+                  tracks={activeDisplayTracks}
+                  favoriteTrackIds={favoriteTrackIds}
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  personalizedData={personalizedHome || undefined}
+                  playbackHistory={playbackHistory}
+                  userName={userName}
+                  onSelectTrack={handleSelectTrack}
+                  onTogglePlay={handleTogglePlay}
+                  onToggleFavorite={handleToggleFavorite}
+                  onOpenVideo={setActiveVideo}
+                  onPlayMix={handlePlayMix}
+                  onOpenColdStart={() => setIsOnboardingOpen(true)}
+                  onNavigateToSearch={(query, source) => {
+                    if (query !== undefined) setSearchQuery(query);
+                    if (source) setSearchSource(source as any);
+                    setActiveScreen('search');
+                  }}
+                />
+              )}
 
-          {activeScreen === 'search' && (
-            <SearchScreen
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              onSelectTrack={handleSelectTrack}
-              onPlayMix={handlePlayMix}
-              onPlayQueue={handlePlayQueue}
-              initialQuery={searchQuery}
-              initialSource={searchSource}
-              onAddToQueue={handleAddToQueue}
-              onPlayNext={handlePlayNext}
-              onToggleFavorite={handleToggleFavorite}
-              favoriteTrackIds={favoriteTrackIds}
-            />
-          )}
+              {activeScreen === 'search' && (
+                <SearchScreen
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  onSelectTrack={handleSelectTrack}
+                  onPlayMix={handlePlayMix}
+                  onPlayQueue={handlePlayQueue}
+                  initialQuery={searchQuery}
+                  initialSource={searchSource}
+                  onAddToQueue={handleAddToQueue}
+                  onPlayNext={handlePlayNext}
+                  onToggleFavorite={handleToggleFavorite}
+                  favoriteTrackIds={favoriteTrackIds}
+                />
+              )}
 
-          {activeScreen === 'library' && (
-            <LibraryScreen
-              tracks={activeDisplayTracks}
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              settings={settings}
-              playbackHistory={playbackHistory}
-              onClearHistory={handleClearHistory}
-              onRemoveFromHistory={handleRemoveFromHistory}
-              onSelectTrack={handleSelectTrack}
-              onPlayQueue={handlePlayQueue}
-              onTogglePlay={handleTogglePlay}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          )}
+              {activeScreen === 'library' && (
+                <LibraryScreen
+                  tracks={activeDisplayTracks}
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  settings={settings}
+                  playbackHistory={playbackHistory}
+                  onClearHistory={handleClearHistory}
+                  onRemoveFromHistory={handleRemoveFromHistory}
+                  onSelectTrack={handleSelectTrack}
+                  onPlayQueue={handlePlayQueue}
+                  onTogglePlay={handleTogglePlay}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              )}
 
-          {activeScreen === 'offline' && (
-            <OfflineScreen
-              onPlayTrack={handleSelectTrack}
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-            />
-          )}
+              {activeScreen === 'offline' && (
+                <OfflineScreen
+                  onPlayTrack={handleSelectTrack}
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                />
+              )}
 
-          {activeScreen === 'plugins' && (
-            <PluginsScreen />
-          )}
+              {activeScreen === 'plugins' && (
+                <PluginsScreen />
+              )}
 
-          {activeScreen === 'settings' && (
-            <SettingsScreen
-              settings={settings}
-              onUpdateSettings={handleUpdateSettings}
-              onBack={() => setActiveScreen('home')}
-              onOpenEqualizer={() => setIsNowPlayingOpen(true)}
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              currentTimeSec={currentTimeSec}
-              onTogglePlay={handleTogglePlay}
-              onNextTrack={handleNextTrack}
-              onPrevTrack={handlePrevTrack}
-              onToggleFavorite={handleToggleFavorite}
-              onSeek={handleSeek}
-            />
-          )}
+              {activeScreen === 'settings' && (
+                <SettingsScreen
+                  settings={settings}
+                  onUpdateSettings={handleUpdateSettings}
+                  onBack={() => setActiveScreen('home')}
+                  onOpenEqualizer={() => setIsNowPlayingOpen(true)}
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  currentTimeSec={currentTimeSec}
+                  onTogglePlay={handleTogglePlay}
+                  onNextTrack={handleNextTrack}
+                  onPrevTrack={handlePrevTrack}
+                  onToggleFavorite={handleToggleFavorite}
+                  onSeek={handleSeek}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </Suspense>
       </main>
 
       {/* Persistent Mini Player Dock */}
-      {currentTrack && (
-        <MiniPlayer
-          currentTrack={currentTrack}
-          isPlaying={isPlaying}
-          currentTimeSec={currentTimeSec}
-          onTogglePlay={handleTogglePlay}
-          onNextTrack={handleNextTrack}
-          onOpenNowPlaying={() => setIsNowPlayingOpen(true)}
-        />
-      )}
+      <AnimatePresence>
+        {currentTrack && (
+          <MiniPlayer
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            currentTimeSec={currentTimeSec}
+            onTogglePlay={handleTogglePlay}
+            onNextTrack={handleNextTrack}
+            onOpenNowPlaying={() => setIsNowPlayingOpen(true)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Bottom Navigation with Frosted Blur */}
       <BottomNav
@@ -1398,40 +1412,42 @@ export default function App() {
       />
 
       {/* Fullscreen Now Playing Overlay */}
-      {isNowPlayingOpen && currentTrack && (
-        <NowPlayingScreen
-          currentTrack={currentTrack}
-          isPlaying={isPlaying}
-          currentTimeSec={currentTimeSec}
-          settings={settings}
-          queue={queue}
-          currentVibe={activeVibe}
-          isShuffle={isShuffle}
-          onToggleShuffle={handleToggleShuffle}
-          repeatMode={repeatMode}
-          onToggleRepeat={handleToggleRepeat}
-          onSelectTrack={handleSelectTrack}
-          onPlayFromQueue={handlePlayFromQueue}
-          onRemoveFromQueue={handleRemoveFromQueue}
-          onReorderQueue={handleReorderQueue}
-          onPlayNext={handlePlayNext}
-          onAddToQueue={handleAddToQueue}
-          onClearQueue={handleClearQueue}
-          onShuffleQueue={handleShuffleQueue}
-          onPrioritizeQueue={handlePrioritizeQueue}
-          isInfiniteAutoPlay={isInfiniteAutoPlay}
-          onToggleInfiniteAutoPlay={handleToggleInfiniteAutoPlay}
-          radioTracks={radioTracks}
-          onTogglePlay={handleTogglePlay}
-          onNextTrack={handleNextTrack}
-          onPrevTrack={handlePrevTrack}
-          onSeek={handleSeek}
-          onClose={() => setIsNowPlayingOpen(false)}
-          onToggleFavorite={handleToggleFavorite}
-          onToggleDislike={handleToggleDislike}
-          onUpdateSettings={handleUpdateSettings}
-        />
-      )}
+      <AnimatePresence>
+        {isNowPlayingOpen && currentTrack && (
+          <NowPlayingScreen
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            currentTimeSec={currentTimeSec}
+            settings={settings}
+            queue={queue}
+            currentVibe={activeVibe}
+            isShuffle={isShuffle}
+            onToggleShuffle={handleToggleShuffle}
+            repeatMode={repeatMode}
+            onToggleRepeat={handleToggleRepeat}
+            onSelectTrack={handleSelectTrack}
+            onPlayFromQueue={handlePlayFromQueue}
+            onRemoveFromQueue={handleRemoveFromQueue}
+            onReorderQueue={handleReorderQueue}
+            onPlayNext={handlePlayNext}
+            onAddToQueue={handleAddToQueue}
+            onClearQueue={handleClearQueue}
+            onShuffleQueue={handleShuffleQueue}
+            onPrioritizeQueue={handlePrioritizeQueue}
+            isInfiniteAutoPlay={isInfiniteAutoPlay}
+            onToggleInfiniteAutoPlay={handleToggleInfiniteAutoPlay}
+            radioTracks={radioTracks}
+            onTogglePlay={handleTogglePlay}
+            onNextTrack={handleNextTrack}
+            onPrevTrack={handlePrevTrack}
+            onSeek={handleSeek}
+            onClose={() => setIsNowPlayingOpen(false)}
+            onToggleFavorite={handleToggleFavorite}
+            onToggleDislike={handleToggleDislike}
+            onUpdateSettings={handleUpdateSettings}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Cold Start Recommendation Algorithm Onboarding Modal */}
       <OnboardingModal

@@ -191,20 +191,24 @@ export function evaluateTrackRelevance(
   let baseScore = 0;
 
   // 1. Exact song title match
-  if (normTitle === normQuery || (compactQuery.length >= 3 && compactTitle === compactQuery)) {
+  if (normTitle === normQuery || (compactQuery.length >= 2 && compactTitle === compactQuery)) {
     matchType = 'exact_title';
     baseScore = 1000;
   }
-  // 2. Song title starts with query
-  else if (normTitle.startsWith(normQuery) || (compactQuery.length >= 3 && compactTitle.startsWith(compactQuery))) {
+  // 2. Song title starts with query OR any word in title starts with query
+  else if (normTitle.startsWith(normQuery) || (compactQuery.length >= 2 && compactTitle.startsWith(compactQuery))) {
     matchType = 'title_starts_with';
     baseScore = 800;
+  }
+  else if (normTitle.split(/\s+/).some((w) => w.startsWith(normQuery))) {
+    matchType = 'title_starts_with';
+    baseScore = 750;
   }
   // 3. Song title contains query
   else if (
     normTitle.includes(normQuery) ||
     normTitle.split(' ').includes(normQuery) ||
-    (compactQuery.length >= 4 && compactTitle.includes(compactQuery))
+    (compactQuery.length >= 3 && compactTitle.includes(compactQuery))
   ) {
     matchType = 'title_contains';
     baseScore = 600;
@@ -215,39 +219,50 @@ export function evaluateTrackRelevance(
     baseScore = 550;
   }
   // 4. Exact artist match
-  else if (normArtist === normQuery || (compactQuery.length >= 3 && compactArtist === compactQuery)) {
+  else if (normArtist === normQuery || (compactQuery.length >= 2 && compactArtist === compactQuery)) {
     matchType = 'exact_artist';
     baseScore = 500;
   }
-  // 5. Artist starts with query
-  else if (normArtist.startsWith(normQuery) || (compactQuery.length >= 3 && compactArtist.startsWith(compactQuery))) {
+  // 5. Artist starts with query OR any word in artist starts with query
+  else if (normArtist.startsWith(normQuery) || (compactQuery.length >= 2 && compactArtist.startsWith(compactQuery))) {
     matchType = 'artist_starts_with';
     baseScore = 400;
+  }
+  else if (normArtist.split(/\s+/).some((w) => w.startsWith(normQuery))) {
+    matchType = 'artist_starts_with';
+    baseScore = 380;
   }
   // 6. Artist contains query
   else if (
     normArtist.includes(normQuery) ||
     normArtist.split(' ').includes(normQuery) ||
-    (compactQuery.length >= 4 && compactArtist.includes(compactQuery))
+    (compactQuery.length >= 3 && compactArtist.includes(compactQuery))
   ) {
     matchType = 'artist_contains';
     baseScore = 350;
   }
   // 7. Album match
-  else if (normAlbum && (normAlbum === normQuery || (compactQuery.length >= 3 && compactAlbum === compactQuery))) {
+  else if (normAlbum && (normAlbum === normQuery || (compactQuery.length >= 2 && compactAlbum === compactQuery))) {
     matchType = 'album_match';
     baseScore = 250;
   } else if (normAlbum && (normAlbum.startsWith(normQuery) || normAlbum.includes(normQuery))) {
     matchType = 'album_match';
     baseScore = 200;
   }
-  // 8. Other legitimate metadata match
+  // 8. Other legitimate metadata match (genre, language, or phonetic)
   else if (normGenre && (normGenre === normQuery || normGenre.includes(normQuery))) {
     matchType = 'metadata_match';
     baseScore = 150;
   } else if (track.language && normalizeSearchQuery(track.language) === normQuery) {
     matchType = 'metadata_match';
     baseScore = 140;
+  } else if (
+    normQuery.length >= 3 &&
+    (toPhoneticKey(normTitle).includes(toPhoneticKey(normQuery)) ||
+      toPhoneticKey(normArtist).includes(toPhoneticKey(normQuery)))
+  ) {
+    matchType = 'metadata_match';
+    baseScore = 130;
   }
 
   // 9. Check genuine lyrics match ONLY if query is at least 3 characters
@@ -271,9 +286,14 @@ export function evaluateTrackRelevance(
     }
   }
 
-  // If no match found or below threshold, reject completely
+  // If no match found or below threshold, check if track is from online search result
   if (!matchType || baseScore < 50) {
-    return { matchType: null, score: 0 };
+    if (track.source === 'itunes' || track.source === 'youtube' || track.source === 'piped' || track.videoId) {
+      matchType = 'metadata_match';
+      baseScore = 120;
+    } else {
+      return { matchType: null, score: 0 };
+    }
   }
 
   // Minor tie-breakers for genuinely relevant results only (max 10 points)
@@ -444,6 +464,31 @@ export const searchEngine = {
           targetQuery: album.title,
           album
         });
+      }
+    }
+
+    // 4. Synthesize Related Query Suggestions for the search word
+    const trimmed = rawQuery.trim();
+    if (trimmed.length >= 1) {
+      const relatedPhrases = [
+        `${trimmed} song`,
+        `${trimmed} remix`,
+        `${trimmed} lofi`,
+        `${trimmed} lyrics`,
+        `${trimmed} slowed & reverb`
+      ];
+      for (const phrase of relatedPhrases) {
+        if (suggestions.length >= 12) break;
+        if (!seenTitles.has(phrase.toLowerCase())) {
+          seenTitles.add(phrase.toLowerCase());
+          suggestions.push({
+            id: `sug-query-${phrase.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+            type: 'query',
+            title: phrase,
+            subtitle: 'Related Search',
+            targetQuery: phrase
+          });
+        }
       }
     }
 

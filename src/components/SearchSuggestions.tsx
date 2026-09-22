@@ -41,9 +41,9 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     return searchEngine.getSuggestions(query);
   }, [trimmedQuery, query]);
 
-  // 2. Fetch online autocomplete queries
+  // 2. Fetch online autocomplete queries (allow single word / character)
   useEffect(() => {
-    if (!trimmedQuery || trimmedQuery.length < 2) {
+    if (!trimmedQuery) {
       setOnlineSuggestions([]);
       return;
     }
@@ -54,7 +54,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
       try {
         const results = await fetchSearchSuggestions(trimmedQuery);
         if (isMounted) {
-          setOnlineSuggestions(results.slice(0, 4));
+          setOnlineSuggestions(results.slice(0, 5));
         }
       } catch (err) {
         // Silent catch
@@ -63,7 +63,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
       }
     };
 
-    const timer = setTimeout(fetchSuggestions, 300);
+    const timer = setTimeout(fetchSuggestions, 200);
     return () => {
       isMounted = false;
       clearTimeout(timer);
@@ -168,116 +168,202 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     );
   }
 
+  // Partition rich suggestions into Songs, Artists/Albums, and Queries
+  const songSuggestions = richSuggestions.filter((s) => s.type === 'song');
+  const artistAlbumSuggestions = richSuggestions.filter((s) => s.type === 'artist' || s.type === 'album');
   const seenQueryTitles = new Set(richSuggestions.map((s) => s.title.toLowerCase()));
   const extraOnlineQueries = onlineSuggestions.filter((q) => !seenQueryTitles.has(q.toLowerCase()));
+  const querySuggestions = [
+    ...richSuggestions.filter((s) => s.type === 'query'),
+    ...extraOnlineQueries.map((q) => ({
+      id: `sug-onl-${q}`,
+      type: 'query' as const,
+      title: q,
+      subtitle: 'Related query',
+      targetQuery: q
+    }))
+  ];
 
-  if (richSuggestions.length === 0 && extraOnlineQueries.length === 0 && !isFetchingSuggestions) {
+  if (
+    songSuggestions.length === 0 &&
+    artistAlbumSuggestions.length === 0 &&
+    querySuggestions.length === 0 &&
+    !isFetchingSuggestions
+  ) {
     return null;
   }
 
   return (
     <div
       id="search-live-suggestions"
-      className="w-full liquid-glass/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-3 shadow-2xl flex flex-col gap-3 animate-in fade-in slide-in-from-top-1 duration-150 z-20"
+      className="w-full liquid-glass/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-3 shadow-2xl flex flex-col gap-3 animate-in fade-in slide-in-from-top-1 duration-150 z-20 max-h-[70vh] overflow-y-auto"
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.04]">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#a1a1aa] flex items-center gap-1.5">
-            <span className="material-symbols-outlined floating-icon text-[15px]">search</span>
-            Search Suggestions
-          </span>
-        </div>
+      {/* 1. Related Songs Section */}
+      {songSuggestions.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.06]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px]">music_note</span>
+              Songs related to &ldquo;{query}&rdquo;
+            </span>
+            <span className="text-[10px] text-zinc-400">
+              {songSuggestions.length} found
+            </span>
+          </div>
 
-        <div className="flex flex-col gap-1 mt-1">
-          {richSuggestions.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => handleItemClick(item)}
-              className="flex items-center justify-between px-2.5 py-2 hover:bg-white/[0.1] hover:shadow-lg hover:scale-[1.01] transition-all duration-200 rounded-xl group cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                {item.coverUrl ? (
-                  <img
-                    src={item.coverUrl}
-                    alt={item.title}
-                    className={`w-9 h-9 object-cover shrink-0 border border-white/10 ${
-                      item.type === 'artist' ? 'rounded-full' : 'rounded-lg'
-                    }`}
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-zinc-400">
-                    <span className="material-symbols-outlined floating-icon text-[18px]">
-                      {item.type === 'artist'
-                        ? 'person'
-                        : item.type === 'album'
-                        ? 'album'
-                        : item.type === 'playlist'
-                        ? 'queue_music'
-                        : item.type === 'song'
-                        ? 'music_note'
-                        : 'search'}
-                    </span>
+          <div className="flex flex-col gap-1 mt-1">
+            {songSuggestions.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => handleItemClick(item)}
+                className="flex items-center justify-between px-2.5 py-2 hover:bg-white/[0.1] hover:shadow-lg hover:scale-[1.01] transition-all duration-200 rounded-xl group cursor-pointer"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative w-9 h-9 shrink-0 rounded-lg overflow-hidden border border-white/10 bg-zinc-800">
+                    {item.coverUrl ? (
+                      <img
+                        src={item.coverUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                        <span className="material-symbols-outlined text-[18px]">music_note</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <span className="material-symbols-outlined text-white text-[18px]">play_arrow</span>
+                    </div>
                   </div>
-                )}
 
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[13px] font-semibold text-white truncate">
-                    {highlightMatch(item.title, trimmedQuery)}
-                  </span>
-                  {item.subtitle && (
-                    <span className="text-[11px] text-zinc-400 truncate">
-                      {item.subtitle}
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
+                      {highlightMatch(item.title, trimmedQuery)}
                     </span>
-                  )}
+                    {item.subtitle && (
+                      <span className="text-[11px] text-zinc-400 truncate">
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                    Play
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onInsertQuery(item.targetQuery || item.title);
+                    }}
+                    title="Insert into search"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">north_west</span>
+                  </button>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 uppercase tracking-wider">
-                  {item.type}
-                </span>
+      {/* 2. Related Search Terms */}
+      {querySuggestions.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.06]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px]">search</span>
+              Related Searches
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-0.5 mt-1">
+            {querySuggestions.slice(0, 5).map((item) => (
+              <div
+                key={item.id}
+                onClick={() => onSelectQuery(item.targetQuery || item.title)}
+                className="flex items-center justify-between px-2.5 py-1.5 hover:bg-white/[0.1] rounded-xl group cursor-pointer transition-all"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="material-symbols-outlined text-zinc-500 group-hover:text-rose-400 text-[18px]">
+                    search
+                  </span>
+                  <span className="text-[13px] text-zinc-200 truncate group-hover:text-white">
+                    {highlightMatch(item.title, trimmedQuery)}
+                  </span>
+                </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onInsertQuery(item.targetQuery || item.title);
                   }}
                   title="Insert into search"
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/[0.06] cursor-pointer transition-colors"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0"
                 >
-                  <span className="material-symbols-outlined floating-icon text-[16px]">north_west</span>
+                  <span className="material-symbols-outlined text-[16px]">north_west</span>
                 </button>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+      )}
 
-          {extraOnlineQueries.map((q) => (
-            <div
-              key={q}
-              onClick={() => onSelectQuery(q)}
-              className="flex items-center justify-between px-2.5 py-2 hover:bg-white/[0.1] hover:shadow-lg hover:scale-[1.01] transition-all duration-200 rounded-xl group cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="material-symbols-outlined floating-icon text-[#71717a] group-hover:text-[var(--color-primary)] text-[18px]">
-                  search
-                </span>
-                <span className="text-[13px] text-[#e4e1e7] truncate group-hover:text-white">
-                  {highlightMatch(q, trimmedQuery)}
+      {/* 3. Artists & Albums Section */}
+      {artistAlbumSuggestions.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.06]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px]">person</span>
+              Artists &amp; Albums
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1 mt-1">
+            {artistAlbumSuggestions.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => handleItemClick(item)}
+                className="flex items-center justify-between px-2.5 py-2 hover:bg-white/[0.1] rounded-xl group cursor-pointer transition-all"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {item.coverUrl ? (
+                    <img
+                      src={item.coverUrl}
+                      alt={item.title}
+                      className={`w-8 h-8 object-cover shrink-0 border border-white/10 ${
+                        item.type === 'artist' ? 'rounded-full' : 'rounded-lg'
+                      }`}
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-zinc-400">
+                      <span className="material-symbols-outlined text-[16px]">
+                        {item.type === 'artist' ? 'person' : 'album'}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-medium text-white truncate group-hover:text-rose-300">
+                      {highlightMatch(item.title, trimmedQuery)}
+                    </span>
+                    {item.subtitle && (
+                      <span className="text-[11px] text-zinc-400 truncate">
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 uppercase tracking-wider">
+                  {item.type}
                 </span>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onInsertQuery(q);
-                }}
-                title="Insert into search"
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/[0.06] cursor-pointer transition-colors shrink-0"
-              >
-                <span className="material-symbols-outlined floating-icon text-[16px]">north_west</span>
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

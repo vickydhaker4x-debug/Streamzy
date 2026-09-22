@@ -231,7 +231,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({
                   onPrioritizeQueue();
                   showToast('Queue Prioritized: 1. Singer • 2. Genre • 3. Language');
                 }}
-                className="px-2.5 py-1 rounded-full bg-[#FE385E]/20 hover:bg-[#FE385E]/30 text-[#FE385E] border border-[#FE385E]/30 active:scale-95 flex items-center gap-1 text-[11px] font-bold transition cursor-pointer streamzy-glow-subtle"
+                className="px-3 py-1.5 rounded-xl bg-[#FE385E]/20 hover:bg-[#FE385E]/30 text-[#FE385E] border border-[#FE385E]/30 active:scale-95 flex items-center gap-1 text-[11px] font-bold transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer streamzy-glow-subtle"
               >
                 <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
                 <span>Prioritize</span>
@@ -247,7 +247,7 @@ export const QueueDrawer: React.FC<QueueDrawerProps> = ({
                   setPlaylistNameInput(`Queue Mix - ${new Date().toLocaleDateString()}`);
                   setIsSavingPlaylist(true);
                 }}
-                className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.14] active:scale-90 flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.14] active:scale-95 flex items-center gap-1.5 text-zinc-300 hover:text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[17px]">playlist_add</span>
               </button>
