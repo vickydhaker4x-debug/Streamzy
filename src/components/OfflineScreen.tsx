@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CheckCircle2, Trash2, HardDrive, Search, Pause, Play, CloudOff } from 'lucide-react';
 import { Track } from '../types';
 import { offlineService } from '../services/offlineService';
 import { offlineDatabaseService } from '../services/offlineDatabaseService';
@@ -112,7 +113,7 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="material-symbols-outlined text-[#0EA5E0] text-[26px]">download_done</span>
+            <CheckCircle2 size={26} className="text-[#0EA5E0]" />
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Offline & Downloads</h1>
           </div>
           <p className="text-sm text-[#A193A5]">
@@ -125,7 +126,7 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
             onClick={handleClearCache}
             className="px-3.5 py-2 rounded-xl bg-[#1F1122] hover:bg-[#2D1632] border border-[#3E2145] text-xs font-semibold text-rose-300 flex items-center gap-1.5 transition cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+            <Trash2 size={16} />
             Clear Offline Cache
           </button>
         )}
@@ -136,7 +137,7 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#0EA5E0]/15 text-[#0EA5E0] flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px]">hard_drive</span>
+              <HardDrive size={20} />
             </div>
             <div>
               <span className="text-xs text-[#A193A5] block">Offline Audio Footprint</span>
@@ -164,9 +165,7 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
       {/* Search Filter */}
       {downloadedTracks.length > 0 && (
         <div className="relative mb-5">
-          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A193A5] text-[20px]">
-            search
-          </span>
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A193A5]" />
           <input
             type="text"
             placeholder="Search downloaded songs..."
@@ -204,9 +203,11 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
                     />
                     {isSelected && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#0EA5E0] text-[20px]">
-                          {isPlaying ? 'pause' : 'play_arrow'}
-                        </span>
+                        {isPlaying ? (
+                          <Pause size={20} className="text-[#0EA5E0] fill-current" />
+                        ) : (
+                          <Play size={20} className="text-[#0EA5E0] fill-current" />
+                        )}
                       </div>
                     )}
                   </div>
@@ -216,7 +217,7 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
                       <span className="truncate">{track.artist}</span>
                       <span>•</span>
                       <span className="text-emerald-400 flex items-center gap-0.5 font-medium text-[11px]">
-                        <span className="material-symbols-outlined text-[13px]">offline_pin</span>
+                        <CheckCircle2 size={13} />
                         Ready
                       </span>
                     </div>
@@ -233,9 +234,11 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
                     }}
                     className="w-8 h-8 rounded-full bg-[#1F1223] hover:bg-[#0EA5E0] hover:text-black text-[#0EA5E0] flex items-center justify-center transition"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {isSelected && isPlaying ? 'pause' : 'play_arrow'}
-                    </span>
+                    {isSelected && isPlaying ? (
+                      <Pause size={16} className="fill-current" />
+                    ) : (
+                      <Play size={16} className="fill-current" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -244,7 +247,7 @@ export const OfflineScreen: React.FC<OfflineScreenProps> = ({
         </div>
       ) : (
         <div className="py-16 text-center text-[#A193A5]">
-          <span className="material-symbols-outlined text-5xl text-[#3E2544] mb-2 block">cloud_off</span>
+          <CloudOff size={48} className="text-[#3E2544] mb-2 mx-auto block" />
           <p className="text-base font-semibold text-white">No offline songs available</p>
           <p className="text-xs mt-1 text-[#7A6B7E] max-w-sm mx-auto">
             Tap the download icon on any song or playlist in Explore or Search to save tracks for instant offline listening.

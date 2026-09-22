@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 import { Track, LyricsLine } from '../types';
 
 interface FullscreenLyricsModalProps {
@@ -103,7 +104,7 @@ export const FullscreenLyricsModal: React.FC<FullscreenLyricsModalProps> = ({
             onClick={onClose}
             className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <X size={20} />
           </button>
         </div>
       </div>

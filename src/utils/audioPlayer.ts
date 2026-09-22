@@ -477,11 +477,25 @@ export class AudioEngine {
         this.silentAudio.pause();
       }
 
-      // For Android native playback, do NOT resolve audio stream through WebView first.
-      // Pass existing direct audioUrl/streamUrl if available; otherwise empty string to let native StreamResolver handle it.
       let directUrl = currentTrackObj.audioUrl || currentTrackObj.streamUrl || '';
       let resolvedMimeType = 'audio/mp4';
       let resolvedStreamInfo: StreamInfo | null = null;
+
+      // 1. Check if track is downloaded or offline cached in encrypted vault
+      try {
+        const isTrackOffline = networkMonitorService.isOffline() || 
+                               offlineService.isOfflineOnlyMode() || 
+                               offlineService.isDownloaded(currentTrackObj.id);
+        if (isTrackOffline || !directUrl) {
+          const offlineUri = await encryptedStorageService.getDecryptedAudioUrl(currentTrackObj.id);
+          if (offlineUri) {
+            console.log(`[AudioEngine] Native playing from local offline vault URI: ${offlineUri}`);
+            directUrl = offlineUri;
+          }
+        }
+      } catch (err) {
+        console.warn('[AudioEngine] Could not check offline storage for native player:', err);
+      }
 
       if (reqId !== this.playRequestId) {
         console.log('[AudioEngine] Discarding stale play invocation');

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { ArrowLeft, BellRing, UserPlus, Play, Shuffle, CheckCircle2, Download, Heart } from 'lucide-react';
 import { Track } from '../../types';
 import { EnrichedArtist, EnrichedAlbum, extractArtists, extractAlbums } from '../../services/libraryDataService';
 import { TrackImage } from '../TrackImage';
@@ -88,7 +89,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
           onClick={onBack}
           className="flex items-center gap-1.5 text-[13px] font-bold text-[#a1a1aa] hover:text-[#e4e1e7] transition-colors cursor-pointer py-1"
         >
-          <span className="material-symbols-outlined floating-icon text-[20px]">arrow_back</span>
+          <ArrowLeft size={18} />
           Back to Artists
         </button>
       </div>
@@ -138,12 +139,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
                 : 'bg-[var(--color-primary)] text-[#670211] hover:brightness-110'
             }`}
           >
-            <span
-              className="material-symbols-outlined floating-icon text-[18px]"
-              style={{ fontVariationSettings: isSubscribed ? "'FILL' 1" : "'FILL' 0" }}
-            >
-              {isSubscribed ? 'notifications_active' : 'person_add'}
-            </span>
+            {isSubscribed ? <BellRing size={16} /> : <UserPlus size={16} />}
             {isSubscribed ? 'Subscribed' : 'Subscribe'}
           </button>
 
@@ -155,9 +151,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
                 className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-[#670211] hover:brightness-110 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-md"
                 title="Play Artist Radio"
               >
-                <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  play_arrow
-                </span>
+                <Play size={18} className="fill-current" />
               </button>
 
               <button
@@ -166,7 +160,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
                 className="w-10 h-10 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-[#e4e1e7] flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-white/10 shadow-sm"
                 title="Smart Shuffle Artist"
               >
-                <span className="material-symbols-outlined floating-icon text-[18px]">shuffle</span>
+                <Shuffle size={18} />
               </button>
             </>
           )}
@@ -248,9 +242,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
                       downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                     }`}
                   >
-                    <span className="material-symbols-outlined floating-icon text-[18px]">
-                      {downloaded ? 'check_circle' : 'download'}
-                    </span>
+                    {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
                   </button>
 
                   <button
@@ -260,12 +252,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
                       track.isFavorite ? 'text-[var(--color-primary)]' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                     }`}
                   >
-                    <span
-                      className="material-symbols-outlined floating-icon text-[18px]"
-                      style={{ fontVariationSettings: track.isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                    >
-                      {track.isFavorite ? 'favorite' : 'favorite_border'}
-                    </span>
+                    <Heart size={16} className={track.isFavorite ? 'fill-current' : ''} />
                   </button>
 
                   <span className="text-[12px] text-[#a1a1aa] font-mono min-w-[36px] text-right">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { X, Bell } from 'lucide-react';
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -42,12 +43,12 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
           onClick={onClose}
           className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          <X size={18} />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 rounded-xl bg-[#0EA5E0]/20 text-[#0EA5E0] flex items-center justify-center">
-            <span className="material-symbols-outlined text-[24px]">notifications</span>
+            <Bell size={22} />
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">Notifications</h2>

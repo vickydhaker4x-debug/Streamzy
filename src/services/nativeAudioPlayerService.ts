@@ -52,6 +52,9 @@ export interface NativeAudioPlayerPluginInterface {
   setShuffleMode(options: { isShuffle: boolean }): Promise<{ success: boolean }>;
   updateMetadata(options: { track: NativeTrackPayload; isFavorite?: boolean }): Promise<{ success: boolean }>;
   getPlaybackState(): Promise<NativePlaybackState>;
+  saveOfflineAudio(options: { trackId: string; base64Data: string; mimeType?: string }): Promise<{ success: boolean; uri: string; path: string }>;
+  getOfflineAudioUri(options: { trackId: string }): Promise<{ exists: boolean; uri: string | null; path?: string }>;
+  deleteOfflineAudio(options: { trackId: string }): Promise<{ success: boolean }>;
   addListener(eventName: string, listenerFunc: (data: any) => void): Promise<PluginListenerHandle>;
 }
 
@@ -340,6 +343,39 @@ class NativeAudioPlayerService {
     } catch (e) {
       console.error('[NativeAudioPlayer] getPlaybackState failed:', e);
       return null;
+    }
+  }
+
+  public async saveOfflineAudio(trackId: string, base64Data: string, mimeType = 'audio/mp4'): Promise<string | null> {
+    if (!this.isAndroid) return null;
+    try {
+      const res = await NativeAudioPlayer.saveOfflineAudio({ trackId, base64Data, mimeType });
+      return res?.uri || null;
+    } catch (e) {
+      console.warn('[NativeAudioPlayer] saveOfflineAudio failed:', e);
+      return null;
+    }
+  }
+
+  public async getOfflineAudioUri(trackId: string): Promise<string | null> {
+    if (!this.isAndroid) return null;
+    try {
+      const res = await NativeAudioPlayer.getOfflineAudioUri({ trackId });
+      return res?.exists ? res.uri : null;
+    } catch (e) {
+      console.warn('[NativeAudioPlayer] getOfflineAudioUri failed:', e);
+      return null;
+    }
+  }
+
+  public async deleteOfflineAudio(trackId: string): Promise<boolean> {
+    if (!this.isAndroid) return false;
+    try {
+      const res = await NativeAudioPlayer.deleteOfflineAudio({ trackId });
+      return Boolean(res?.success);
+    } catch (e) {
+      console.warn('[NativeAudioPlayer] deleteOfflineAudio failed:', e);
+      return false;
     }
   }
 }

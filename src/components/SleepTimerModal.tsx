@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X, Moon } from 'lucide-react';
 
 interface SleepTimerModalProps {
   isOpen: boolean;
@@ -29,12 +30,12 @@ export const SleepTimerModal: React.FC<SleepTimerModalProps> = ({
           onClick={onClose}
           className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          <X size={18} />
         </button>
 
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-[#FE385E]/20 text-[#FE385E] flex items-center justify-center">
-            <span className="material-symbols-outlined text-[24px]">bedtime</span>
+            <Moon size={22} />
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">Sleep Timer</h2>

@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { CloudOff, Wifi, Download, X } from 'lucide-react';
 import { networkMonitorService, NetworkState } from '../services/networkMonitorService';
 import { offlineService } from '../services/offlineService';
 import { encryptedStorageService, StorageVaultStats } from '../services/encryptedStorageService';
@@ -53,9 +54,7 @@ export const NetworkOfflineBanner: React.FC<NetworkOfflineBannerProps> = ({ onOp
               ? 'bg-amber-500/20 border-amber-500/30 text-amber-200'
               : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-200'
           }`}>
-            <span className="material-symbols-outlined text-[18px]">
-              {isOffline ? 'cloud_off' : 'wifi'}
-            </span>
+            {isOffline ? <CloudOff size={16} /> : <Wifi size={16} />}
             <span>{showToast}</span>
           </div>
         </div>
@@ -65,9 +64,7 @@ export const NetworkOfflineBanner: React.FC<NetworkOfflineBannerProps> = ({ onOp
       {isOffline && !isDismissed && (
         <div className="w-full bg-gradient-to-r from-amber-950/70 via-red-950/60 to-amber-950/70 border-b border-amber-500/20 px-3 py-2 text-xs flex items-center justify-between gap-3 text-amber-200 backdrop-blur-md sticky top-0 z-40 animate-fade-in shadow-md">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined text-[18px] text-amber-400 shrink-0 animate-pulse">
-              cloud_off
-            </span>
+            <CloudOff size={18} className="text-amber-400 shrink-0 animate-pulse" />
             <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0">
               <span className="font-bold text-white whitespace-nowrap">Offline Mode Active</span>
               <span className="text-amber-300/80 text-[11px] truncate">
@@ -82,7 +79,7 @@ export const NetworkOfflineBanner: React.FC<NetworkOfflineBannerProps> = ({ onOp
                 onClick={onOpenDownloads}
                 className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[11px] font-semibold text-white transition active:scale-95 flex items-center gap-1 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[14px]">download</span>
+                <Download size={13} />
                 <span>Vault</span>
               </button>
             )}
@@ -92,7 +89,7 @@ export const NetworkOfflineBanner: React.FC<NetworkOfflineBannerProps> = ({ onOp
               className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-amber-300 hover:text-white transition cursor-pointer"
               title="Dismiss Ribbon"
             >
-              <span className="material-symbols-outlined text-[16px]">close</span>
+              <X size={15} />
             </button>
           </div>
         </div>

@@ -33,8 +33,12 @@ import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -184,7 +188,17 @@ public class MediaNotificationService extends Service implements Player.Listener
                 .setUsage(C.USAGE_MEDIA)
                 .build();
 
+        DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
+                .setUserAgent("Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36")
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(8000)
+                .setReadTimeoutMs(10000);
+
+        DefaultDataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(this, httpDataSourceFactory);
+        DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(dataSourceFactory);
+
         exoPlayer = new ExoPlayer.Builder(this)
+                .setMediaSourceFactory(mediaSourceFactory)
                 .setAudioAttributes(audioAttributes, true) // AudioFocus handled automatically!
                 .setWakeMode(C.WAKE_MODE_NETWORK)
                 .setHandleAudioBecomingNoisy(true) // Pauses automatically when headphones disconnected!
@@ -271,7 +285,31 @@ public class MediaNotificationService extends Service implements Player.Listener
                 stopPlayback();
             }
         }
-        return START_NOT_STICKY;
+        return START_STICKY;
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        Log.d(TAG, "onTaskRemoved: user swiped app from Recents. Checking playback status...");
+        // Keep foreground service playing music if user has not explicitly stopped
+        if (isPlaying() || isForegroundRunning) {
+            Log.d(TAG, "Playback active: maintaining foreground service across app swipe.");
+        } else {
+            stopPlayback();
+            stopSelf();
+        }
+    }
+
+    public boolean isNetworkConnected() {
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                return activeNetwork != null && activeNetwork.isConnected();
+            }
+        } catch (Exception ignored) {}
+        return true;
     }
 
     public void setEventListener(ServiceEventListener listener) {
@@ -300,15 +338,40 @@ public class MediaNotificationService extends Service implements Player.Listener
 
         final long generation = ++playbackGeneration;
 
-        // Leverage React's highly resilient parallel racer resolver if streamUrl is provided.
-        // Only force native resolution if no valid streamUrl is provided from the JS side.
-        boolean alwaysResolve = (track.getVideoId() != null && !track.getVideoId().trim().isEmpty() && (streamUrl == null || streamUrl.trim().isEmpty()));
+        // 1. Check if track exists in the native offline vault first!
+        try {
+            File offlineDir = new File(getFilesDir(), "offline_vault");
+            String safeId = track.getId().replaceAll("[^a-zA-Z0-9_-]", "_");
+            File offlineFile = new File(offlineDir, safeId + ".audio");
+            if (offlineFile.exists() && offlineFile.length() > 1024) {
+                String localUri = Uri.fromFile(offlineFile).toString();
+                Log.d(TAG, "[VDMUSIC_PLAY] Found local offline vault audio: " + localUri + " (size: " + offlineFile.length() + ")");
+                executePlayUrl(localUri, track, mimeType != null ? mimeType : "audio/mp4", generation);
+                return;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error checking offline vault file: " + e.getMessage());
+        }
 
-        if (!alwaysResolve && streamUrl != null && !streamUrl.isEmpty()) {
-            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " videoId=" + track.getVideoId() + " streamHost=provided playerMediaReset=true freshStream=false");
+        // 2. If a direct streamUrl is already provided (remote https, file://, or content://)
+        if (streamUrl != null && !streamUrl.trim().isEmpty()) {
+            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " streamUrl provided: " + streamUrl);
             executePlayUrl(streamUrl, track, mimeType, generation);
-        } else if (track.getVideoId() != null && !track.getVideoId().isEmpty()) {
-            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " videoId=" + track.getVideoId() + " playerMediaReset=true freshStream=true");
+            return;
+        }
+
+        // 3. If no stream URL, check if device is offline before attempting network
+        if (!isNetworkConnected()) {
+            Log.w(TAG, "[VDMUSIC_PLAY] Offline and no local cached file for track: " + track.getTitle());
+            if (eventListener != null) {
+                eventListener.onPlaybackError("This song is not available offline. Please download it or connect to the internet.");
+            }
+            return;
+        }
+
+        // 4. Resolve stream URL from online endpoints
+        if (track.getVideoId() != null && !track.getVideoId().isEmpty()) {
+            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " videoId=" + track.getVideoId() + " resolving stream...");
             StreamResolver.resolveAsync(track.getVideoId(), new StreamResolver.StreamCallback() {
                 @Override
                 public void onResolved(StreamResolver.ResolvedStream stream) {
@@ -318,7 +381,7 @@ public class MediaNotificationService extends Service implements Player.Listener
                             return;
                         }
                         track.setStreamUrl(stream.url);
-                        Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " videoId=" + track.getVideoId() + " streamHost=" + stream.url.substring(0, Math.min(30, stream.url.length())) + " mimeType=" + stream.mimeType + " codec=" + stream.codec + " playerMediaReset=true freshStream=true");
+                        Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " resolved mime=" + stream.mimeType);
                         executePlayUrl(stream.url, track, stream.mimeType, generation);
                     });
                 }

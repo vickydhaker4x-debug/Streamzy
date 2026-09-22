@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { Compass, Search, Library, DownloadCloud } from 'lucide-react';
 import { ActiveScreen } from '../types';
 
 interface BottomNavProps {
@@ -11,11 +12,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   activeScreen,
   onSelectScreen
 }) => {
-  const tabs: { id: ActiveScreen; label: string; icon: string }[] = [
-    { id: 'home', label: 'Explore', icon: 'explore' },
-    { id: 'search', label: 'Search', icon: 'search' },
-    { id: 'library', label: 'Library', icon: 'library_music' },
-    { id: 'offline', label: 'Offline', icon: 'download_for_offline' }
+  const tabs = [
+    { id: 'home' as ActiveScreen, label: 'Explore', Icon: Compass },
+    { id: 'search' as ActiveScreen, label: 'Search', Icon: Search },
+    { id: 'library' as ActiveScreen, label: 'Library', Icon: Library },
+    { id: 'offline' as ActiveScreen, label: 'Offline', Icon: DownloadCloud }
   ];
 
   return (
@@ -26,6 +27,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       <div className="h-16 px-4 flex items-center justify-around max-w-lg mx-auto">
         {tabs.map((tab) => {
           const isActive = activeScreen === tab.id;
+          const Icon = tab.Icon;
           return (
             <button
               key={tab.id}
@@ -44,12 +46,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   transition={{ type: 'spring', damping: 26, stiffness: 350 }}
                 />
               )}
-              <span 
-                className="material-symbols-outlined floating-icon text-[24px]"
-                style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
-              >
-                {tab.icon}
-              </span>
+              <Icon 
+                size={22} 
+                className={`transition-transform duration-200 ${isActive ? 'scale-110 stroke-[2.5]' : 'stroke-[1.8]'}`}
+              />
               <span className="text-[11px] font-semibold mt-0.5 tracking-tight">
                 {tab.label}
               </span>

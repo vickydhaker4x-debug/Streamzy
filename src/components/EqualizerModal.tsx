@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SlidersHorizontal, X, ArrowLeftRight, Activity } from 'lucide-react';
 import { EQUALIZER_PRESETS } from '../data/bloomeePlugins';
 
 interface EqualizerModalProps {
@@ -87,7 +88,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-[#FE385E]/20 text-[#FE385E] flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px]">equalizer</span>
+              <SlidersHorizontal size={22} />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -111,7 +112,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -181,7 +182,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({
           <div className="p-4 rounded-2xl bg-[#140C16] border border-[#2A162D]">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[18px] text-[#0EA5E0]">compare_arrows</span>
+                <ArrowLeftRight size={16} className="text-[#0EA5E0]" />
                 Crossfade Tracks
               </span>
               <span className="text-xs font-mono text-[#0EA5E0] font-bold">{crossfade}s</span>
@@ -202,7 +203,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({
           <div className="p-4 rounded-2xl bg-[#140C16] border border-[#2A162D]">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[18px] text-[#FE385E]">graphic_eq</span>
+                <Activity size={16} className="text-[#FE385E]" />
                 Dynamic Sub-Bass
               </span>
               <span className="text-xs font-mono text-[#FE385E] font-bold">+{bassBoost * 2} dB</span>

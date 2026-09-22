@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CheckCircle2, CloudOff, Wifi, WifiOff, DownloadCloud, RefreshCw, Lock, Play, Trash2, Volume2, Heart, Sparkles } from 'lucide-react';
 import { Track } from '../../types';
 import { TrackImage } from '../TrackImage';
 import { offlineService } from '../../services/offlineService';
@@ -96,7 +97,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
       {/* Toast Notification */}
       {syncToast && (
         <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[13px] font-semibold flex items-center gap-2">
-          <span className="material-symbols-outlined floating-icon text-[18px]">verified</span>
+          <CheckCircle2 size={18} />
           <span>{syncToast}</span>
         </div>
       )}
@@ -107,9 +108,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
           <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
             isOfflineOnly ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/[0.06] text-[#a1a1aa]'
           }`}>
-            <span className="material-symbols-outlined floating-icon text-[24px]">
-              {isOfflineOnly ? 'cloud_off' : 'wifi'}
-            </span>
+            {isOfflineOnly ? <CloudOff size={22} /> : <Wifi size={22} />}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-[14px] font-bold text-[#e4e1e7]">Offline-Only Mode</span>
@@ -140,7 +139,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/20 text-[var(--color-primary)] flex items-center justify-center">
-              <span className="material-symbols-outlined floating-icon text-[20px]">auto_download</span>
+              <Sparkles size={20} />
             </div>
             <div className="flex flex-col">
               <span className="text-[14px] font-bold text-[#e4e1e7]">Smart Downloads</span>
@@ -155,7 +154,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
               className="px-3 py-1.5 rounded-full liquid-glass hover:bg-white/15 text-[12px] font-semibold text-[var(--color-primary)] flex items-center gap-1 cursor-pointer transition-all active:scale-95"
               title="Sync most played tracks to storage now"
             >
-              <span className="material-symbols-outlined floating-icon text-[16px]">sync</span>
+              <RefreshCw size={15} />
               Sync Now
             </button>
 
@@ -204,7 +203,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
         <div className="pt-3 border-t border-white/[0.06] flex flex-col gap-2.5">
           <div className="flex items-center justify-between text-[12px]">
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-emerald-400">lock</span>
+              <Lock size={15} className="text-emerald-400" />
               <span className="text-[#e4e1e7] font-semibold">Encrypted Local Vault</span>
             </div>
             <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
@@ -239,9 +238,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
           <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
             netState.isOnline ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
           }`}>
-            <span className="material-symbols-outlined text-[20px]">
-              {netState.isOnline ? 'wifi' : 'wifi_off'}
-            </span>
+            {netState.isOnline ? <Wifi size={20} /> : <WifiOff size={20} />}
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
@@ -292,9 +289,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
               onClick={() => onPlayDownloadedQueue(downloadedTracks, 0)}
               className="px-4 py-2 rounded-full bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer floating-btn"
             >
-              <span className="material-symbols-outlined floating-icon text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                play_arrow
-              </span>
+              <Play size={16} className="fill-current" />
               Play All Offline
             </button>
 
@@ -303,7 +298,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
               onClick={() => setShowClearConfirm(true)}
               className="px-3 py-2 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[12px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
             >
-              <span className="material-symbols-outlined floating-icon text-[16px]">delete</span>
+              <Trash2 size={16} />
               Clear All
             </button>
           </div>
@@ -336,7 +331,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
       {downloadedTracks.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center p-10 liquid-glass rounded-3xl border border-white/[0.04] my-2">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-3">
-            <span className="material-symbols-outlined floating-icon text-[32px]">download_for_offline</span>
+            <DownloadCloud size={32} />
           </div>
           <h3 className="text-[17px] font-bold text-[#e4e1e7]">No Offline Songs Yet</h3>
           <p className="text-[13px] text-[#a1a1aa] max-w-sm mt-1 mb-4">
@@ -346,7 +341,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
             onClick={handleSyncNow}
             className="px-5 py-2.5 rounded-full bg-[var(--color-primary)] text-[#670211] text-[13px] font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined floating-icon text-[18px]">auto_download</span>
+            <Sparkles size={18} />
             Auto-Download Top Tracks Now
           </button>
         </div>
@@ -377,9 +372,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
                     />
                     {isThisActive && isPlaying && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)] animate-pulse">
-                          volume_up
-                        </span>
+                        <Volume2 size={18} className="text-[var(--color-primary)] animate-pulse" />
                       </div>
                     )}
                   </div>
@@ -403,7 +396,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
 
                 <div className="flex items-center gap-2 shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
                   <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                    <span className="material-symbols-outlined floating-icon text-[15px]">lock</span>
+                    <Lock size={14} />
                     <span className="text-[10px] font-mono bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30">AES-256</span>
                   </span>
 
@@ -415,12 +408,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
                       track.isFavorite ? 'text-[var(--color-primary)]' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                     }`}
                   >
-                    <span
-                      className="material-symbols-outlined floating-icon text-[18px]"
-                      style={{ fontVariationSettings: track.isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                    >
-                      {track.isFavorite ? 'favorite' : 'favorite_border'}
-                    </span>
+                    <Heart size={16} className={track.isFavorite ? 'fill-current' : ''} />
                   </button>
 
                   {/* Remove download button */}
@@ -431,7 +419,7 @@ export const OfflineDownloadsSection: React.FC<OfflineDownloadsSectionProps> = (
                     onClick={(e) => handleRemoveTrack(track.id, e)}
                     className="w-8 h-8 rounded-full flex items-center justify-center text-[#71717a] hover:text-red-400 hover:bg-white/5 transition-all cursor-pointer"
                   >
-                    <span className="material-symbols-outlined floating-icon text-[18px]">delete</span>
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

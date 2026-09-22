@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { BarChart3, Search, Play, Trash2, AlertTriangle, History, Volume2, Clock, CheckCircle2, Download, Heart, X } from 'lucide-react';
 import { Track } from '../../types';
 import { TrackImage } from '../TrackImage';
 import { calculateHistoryStats, formatRelativeTime } from '../../services/libraryDataService';
@@ -76,9 +77,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
         <div className="p-4 sm:p-5 rounded-3xl liquid-glass border border-white/[0.08] shadow-lg flex flex-col gap-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined floating-icon text-[20px] text-[var(--color-primary)]">
-                monitoring
-              </span>
+              <BarChart3 size={20} className="text-[var(--color-primary)]" />
               <span className="text-[13px] font-bold text-[#e4e1e7]">Listening Activity Analytics</span>
             </div>
             <span className="text-[11px] font-semibold text-[var(--color-primary)] px-2.5 py-0.5 rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20">
@@ -123,9 +122,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         {/* Search within history */}
         <div className="relative flex-1">
-          <span className="material-symbols-outlined floating-icon absolute left-3.5 top-2.5 text-[#a1a1aa] text-[18px]">
-            search
-          </span>
+          <Search size={18} className="absolute left-3.5 top-2.5 text-[#a1a1aa]" />
           <input
             id="search-history-input"
             type="text"
@@ -143,9 +140,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
               onClick={() => onPlayHistoryQueue(playbackHistory, 0)}
               className="px-4 py-2 rounded-full bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer floating-btn"
             >
-              <span className="material-symbols-outlined floating-icon text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                play_arrow
-              </span>
+              <Play size={16} className="fill-current" />
               Play History
             </button>
 
@@ -154,7 +149,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
               onClick={() => setShowClearConfirm(true)}
               className="px-3.5 py-2 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[12px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
             >
-              <span className="material-symbols-outlined floating-icon text-[16px]">delete_sweep</span>
+              <Trash2 size={16} />
               Clear
             </button>
           </div>
@@ -165,7 +160,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
       {showClearConfirm && (
         <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-between gap-3 text-red-200">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined floating-icon text-[20px] text-red-400 shrink-0">warning</span>
+            <AlertTriangle size={20} className="text-red-400 shrink-0" />
             <span className="text-[13px] font-medium truncate">Clear all recorded playback history from this device?</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -193,7 +188,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
       {playbackHistory.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center p-10 liquid-glass rounded-3xl border border-white/[0.04] my-4">
           <div className="w-16 h-16 rounded-2xl liquid-glass text-[#a1a1aa] flex items-center justify-center mb-3">
-            <span className="material-symbols-outlined floating-icon text-[32px]">history</span>
+            <History size={32} />
           </div>
           <h3 className="text-[17px] font-bold text-[#e4e1e7]">No Playback History Yet</h3>
           <p className="text-[13px] text-[#a1a1aa] max-w-sm mt-1">
@@ -239,9 +234,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                           />
                           {isThisActive && isPlaying && (
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                              <span className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)] animate-pulse">
-                                volume_up
-                              </span>
+                              <Volume2 size={18} className="text-[var(--color-primary)] animate-pulse" />
                             </div>
                           )}
                         </div>
@@ -260,7 +253,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                               <>
                                 <span className="text-[#52525b]">•</span>
                                 <span className="text-white/70 flex items-center gap-0.5 font-medium">
-                                  <span className="material-symbols-outlined text-[12px] text-[#a1a1aa]">schedule</span>
+                                  <Clock size={12} className="text-[#a1a1aa]" />
                                   {Math.floor(track.playDurationSec / 60)}:{(track.playDurationSec % 60).toString().padStart(2, '0')} listened
                                 </span>
                               </>
@@ -310,9 +303,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                             downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                           }`}
                         >
-                          <span className="material-symbols-outlined floating-icon text-[17px]">
-                            {downloaded ? 'check_circle' : 'download'}
-                          </span>
+                          {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
                         </button>
 
                         {/* Favorite button */}
@@ -324,12 +315,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                             track.isFavorite ? 'text-[var(--color-primary)]' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                           }`}
                         >
-                          <span
-                            className="material-symbols-outlined floating-icon text-[18px]"
-                            style={{ fontVariationSettings: track.isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                          >
-                            {track.isFavorite ? 'favorite' : 'favorite_border'}
-                          </span>
+                          <Heart size={16} className={track.isFavorite ? 'fill-current' : ''} />
                         </button>
 
                         {/* Remove from history button */}
@@ -340,7 +326,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                           onClick={() => onRemoveFromHistory(track.id)}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-[#71717a] hover:text-red-400 hover:bg-white/5 transition-all cursor-pointer"
                         >
-                          <span className="material-symbols-outlined floating-icon text-[18px]">close</span>
+                          <X size={16} />
                         </button>
                       </div>
                     </div>

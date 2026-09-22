@@ -17,6 +17,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.net.Uri;
+import android.util.Base64;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -380,6 +384,94 @@ public class NativeAudioPlayerPlugin extends Plugin implements MediaNotification
             }
             call.resolve(state);
         });
+    }
+
+    @PluginMethod
+    public void saveOfflineAudio(PluginCall call) {
+        String trackId = call.getString("trackId");
+        String base64Data = call.getString("base64Data");
+
+        if (trackId == null || base64Data == null) {
+            call.reject("trackId and base64Data are required");
+            return;
+        }
+
+        try {
+            File dir = new File(getContext().getFilesDir(), "offline_vault");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String safeId = trackId.replaceAll("[^a-zA-Z0-9_-]", "_");
+            File file = new File(dir, safeId + ".audio");
+
+            byte[] decoded = Base64.decode(base64Data, Base64.DEFAULT);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(decoded);
+                fos.flush();
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("uri", Uri.fromFile(file).toString());
+            ret.put("path", file.getAbsolutePath());
+            ret.put("size", file.length());
+            Log.d(TAG, "Saved offline audio to native vault: " + file.getAbsolutePath() + " (" + file.length() + " bytes)");
+            call.resolve(ret);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to save offline audio: " + e.getMessage(), e);
+            call.reject("Failed to save offline audio: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getOfflineAudioUri(PluginCall call) {
+        String trackId = call.getString("trackId");
+        if (trackId == null) {
+            call.reject("trackId is required");
+            return;
+        }
+
+        try {
+            File dir = new File(getContext().getFilesDir(), "offline_vault");
+            String safeId = trackId.replaceAll("[^a-zA-Z0-9_-]", "_");
+            File file = new File(dir, safeId + ".audio");
+
+            JSObject ret = new JSObject();
+            if (file.exists() && file.length() > 1024) {
+                ret.put("exists", true);
+                ret.put("uri", Uri.fromFile(file).toString());
+                ret.put("path", file.getAbsolutePath());
+                ret.put("size", file.length());
+            } else {
+                ret.put("exists", false);
+                ret.put("uri", null);
+            }
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Failed to check offline audio: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void deleteOfflineAudio(PluginCall call) {
+        String trackId = call.getString("trackId");
+        if (trackId == null) {
+            call.reject("trackId is required");
+            return;
+        }
+
+        try {
+            File dir = new File(getContext().getFilesDir(), "offline_vault");
+            String safeId = trackId.replaceAll("[^a-zA-Z0-9_-]", "_");
+            File file = new File(dir, safeId + ".audio");
+            boolean deleted = file.exists() && file.delete();
+            JSObject ret = new JSObject();
+            ret.put("success", deleted);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Failed to delete offline audio: " + e.getMessage());
+        }
     }
 
     private List<NativeTrack> parseQueue(JSArray array) {

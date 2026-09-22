@@ -1,4 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  ArrowLeft, 
+  Trash2, 
+  ListMusic, 
+  Play, 
+  Plus, 
+  Music, 
+  CheckCircle2, 
+  Download, 
+  X, 
+  Heart, 
+  ChevronRight, 
+  Search, 
+  Check, 
+  Disc3, 
+  User, 
+  Bell, 
+  History, 
+  DownloadCloud 
+} from 'lucide-react';
 import { Track, SettingsState, Playlist } from '../types';
 import { sanitizeTrackForPersistence } from '../services/musicNormalizationService';
 import { TrackImage } from './TrackImage';
@@ -259,13 +279,13 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
   // Tabs metadata
   const TABS = [
-    { id: 'playlists', label: 'Playlists', icon: 'queue_music', badge: playlists.length + (likedTracks.length > 0 ? 1 : 0) },
-    { id: 'liked', label: 'Liked Songs', icon: 'favorite', badge: likedTracks.length },
-    { id: 'albums', label: 'Albums', icon: 'album', badge: albums.length },
-    { id: 'artists', label: 'Artists', icon: 'person', badge: artists.length },
-    { id: 'subscriptions', label: 'Subscriptions', icon: 'notifications', badge: subscriptionService.getAllSubscribed().length },
-    { id: 'history', label: 'History & Activity', icon: 'history', badge: playbackHistory.length },
-    { id: 'downloads', label: 'Offline', icon: 'download_for_offline', badge: offlineService.getAllDownloads().length }
+    { id: 'playlists', label: 'Playlists', Icon: ListMusic, badge: playlists.length + (likedTracks.length > 0 ? 1 : 0) },
+    { id: 'liked', label: 'Liked Songs', Icon: Heart, badge: likedTracks.length },
+    { id: 'albums', label: 'Albums', Icon: Disc3, badge: albums.length },
+    { id: 'artists', label: 'Artists', Icon: User, badge: artists.length },
+    { id: 'subscriptions', label: 'Subscriptions', Icon: Bell, badge: subscriptionService.getAllSubscribed().length },
+    { id: 'history', label: 'History & Activity', Icon: History, badge: playbackHistory.length },
+    { id: 'downloads', label: 'Offline', Icon: DownloadCloud, badge: offlineService.getAllDownloads().length }
   ] as const;
 
   return (
@@ -278,6 +298,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
             !activeAlbumDetail &&
             !activeArtistDetail &&
             !activePlaylistDetail;
+          const TabIcon = tab.Icon;
 
           return (
             <button
@@ -290,12 +311,10 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   : 'bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08] text-[#a1a1aa] hover:text-[#e4e1e7] hover:bg-white/[0.1]'
               }`}
             >
-              <span
-                className="material-symbols-outlined floating-icon text-[18px]"
-                style={{ fontVariationSettings: isActive && tab.id === 'liked' ? "'FILL' 1" : "'FILL' 0" }}
-              >
-                {tab.icon}
-              </span>
+              <TabIcon
+                size={16}
+                className={isActive && tab.id === 'liked' ? 'fill-current' : ''}
+              />
               <span>{tab.label}</span>
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span
@@ -353,14 +372,14 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
               onClick={() => setActivePlaylistDetail(null)}
               className="flex items-center gap-1.5 text-[13px] font-bold text-[#a1a1aa] hover:text-[#e4e1e7] transition-colors cursor-pointer py-1"
             >
-              <span className="material-symbols-outlined floating-icon text-[20px]">arrow_back</span>
+              <ArrowLeft size={18} />
               Back to Playlists
             </button>
             <button
               onClick={(e) => handleDeletePlaylist(activePlaylistDetail.id, e)}
               className="text-[12px] text-red-400 hover:text-red-300 font-semibold px-3 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 transition-all cursor-pointer flex items-center gap-1"
             >
-              <span className="material-symbols-outlined floating-icon text-[16px]">delete</span>
+              <Trash2 size={14} />
               Delete Playlist
             </button>
           </div>
@@ -375,7 +394,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="material-symbols-outlined floating-icon text-[44px]">queue_music</span>
+                <ListMusic size={40} />
               )}
             </div>
 
@@ -402,9 +421,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   onClick={() => handlePlayQueueInternal(activePlaylistDetail.tracks, 0)}
                   className="px-5 py-2.5 rounded-full bg-[var(--color-primary)] text-[#670211] text-[13px] font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer floating-btn"
                 >
-                  <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    play_arrow
-                  </span>
+                  <Play size={18} className="fill-current" />
                   Play All
                 </button>
               )}
@@ -412,7 +429,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 onClick={() => setIsAddSongsModalOpen(true)}
                 className="px-4 py-2.5 rounded-full liquid-glass hover:bg-white/15 text-[#e4e1e7] text-[13px] font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 border border-white/10"
               >
-                <span className="material-symbols-outlined floating-icon text-[18px]">add</span>
+                <Plus size={16} />
                 Add Songs
               </button>
             </div>
@@ -422,9 +439,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
           <div className="flex flex-col gap-2">
             {activePlaylistDetail.tracks.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center p-8 liquid-glass rounded-2xl border border-white/[0.04]">
-                <span className="material-symbols-outlined floating-icon text-[32px] text-[#a1a1aa] mb-2">
-                  music_note
-                </span>
+                <Music size={32} className="text-[#a1a1aa] mb-2" />
                 <p className="text-[14px] font-bold text-[#e4e1e7]">This playlist is currently empty</p>
                 <button
                   onClick={() => setIsAddSongsModalOpen(true)}
@@ -477,9 +492,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                           downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7]'
                         }`}
                       >
-                        <span className="material-symbols-outlined floating-icon text-[18px]">
-                          {downloaded ? 'check_circle' : 'download'}
-                        </span>
+                        {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
                       </button>
 
                       <button
@@ -487,7 +500,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                         className="w-8 h-8 rounded-full flex items-center justify-center text-[#71717a] hover:text-red-400 cursor-pointer"
                         title="Remove from playlist"
                       >
-                        <span className="material-symbols-outlined floating-icon text-[18px]">close</span>
+                        <X size={16} />
                       </button>
                     </div>
                   </div>
@@ -668,15 +681,11 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                         />
                       ))}
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="material-symbols-outlined floating-icon text-[24px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          favorite
-                        </span>
+                        <Heart size={24} className="text-white fill-current" />
                       </div>
                     </div>
                   ) : (
-                    <span className="material-symbols-outlined floating-icon text-[34px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      favorite
-                    </span>
+                    <Heart size={34} className="text-white fill-current" />
                   )}
                 </div>
 
@@ -704,15 +713,11 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                     }}
                     className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined floating-icon text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      play_arrow
-                    </span>
+                    <Play size={16} className="fill-current" />
                     Play
                   </button>
                 )}
-                <span className="material-symbols-outlined floating-icon text-[22px] text-[#a1a1aa] group-hover:text-[#e4e1e7] transition-colors">
-                  arrow_forward
-                </span>
+                <ChevronRight size={22} className="text-[#a1a1aa] group-hover:text-[#e4e1e7] transition-colors" />
               </div>
             </div>
           </div>
@@ -728,7 +733,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 onClick={() => setIsCreateModalOpen(true)}
                 className="px-3.5 py-1.5 rounded-xl bg-[var(--color-primary)] text-[#670211] text-[12px] font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
               >
-                <span className="material-symbols-outlined floating-icon text-[16px]">add</span>
+                <Plus size={16} />
                 New Playlist
               </button>
             </div>
@@ -736,7 +741,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
             {playlists.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center p-8 liquid-glass rounded-3xl border border-white/[0.04]">
                 <div className="w-14 h-14 rounded-2xl liquid-glass text-[#a1a1aa] flex items-center justify-center mb-2">
-                  <span className="material-symbols-outlined floating-icon text-[28px]">queue_music</span>
+                  <ListMusic size={28} />
                 </div>
                 <h3 className="text-[15px] font-bold text-[#e4e1e7]">No Custom Playlists Yet</h3>
                 <p className="text-[12px] text-[#a1a1aa] max-w-xs mt-1 mb-3">
@@ -767,7 +772,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
-                        <span className="material-symbols-outlined floating-icon text-[36px]">queue_music</span>
+                        <ListMusic size={36} />
                       )}
                     </div>
                     <h3 className="font-bold text-[13px] text-[#e4e1e7] truncate group-hover:text-[var(--color-primary)] transition-colors">
@@ -798,7 +803,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 onClick={() => setIsCreateModalOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[#a1a1aa] hover:text-white cursor-pointer"
               >
-                <span className="material-symbols-outlined floating-icon text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
 
@@ -860,14 +865,12 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 onClick={() => setIsAddSongsModalOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[#a1a1aa] hover:text-white cursor-pointer"
               >
-                <span className="material-symbols-outlined floating-icon text-[20px]">close</span>
+                <X size={20} />
               </button>
             </div>
 
             <div className="relative">
-              <span className="material-symbols-outlined floating-icon absolute left-3.5 top-2.5 text-[#a1a1aa] text-[18px]">
-                search
-              </span>
+              <Search size={18} className="absolute left-3.5 top-2.5 text-[#a1a1aa]" />
               <input
                 type="text"
                 placeholder="Search songs to add..."
@@ -917,9 +920,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                             : 'bg-white/10 text-white hover:bg-white/20'
                         }`}
                       >
-                        <span className="material-symbols-outlined floating-icon text-[18px]">
-                          {isInPlaylist ? 'check' : 'add'}
-                        </span>
+                        {isInPlaylist ? <Check size={18} /> : <Plus size={18} />}
                       </button>
                     </div>
                   );

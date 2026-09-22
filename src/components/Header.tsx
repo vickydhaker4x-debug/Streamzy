@@ -1,4 +1,5 @@
 import React from 'react';
+import { SlidersHorizontal, Settings, Cloud } from 'lucide-react';
 import { OPENTUNE_LOGO_URL } from '../data/musicData';
 import { ActiveScreen } from '../types';
 
@@ -78,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-9 h-9 rounded-xl bg-[#180E1B] hover:bg-[#2A162D] text-[#FE385E] flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-[#301B34] cursor-pointer"
               title="10-Band Equalizer"
             >
-              <span className="material-symbols-outlined text-[19px]">equalizer</span>
+              <SlidersHorizontal size={18} />
             </button>
 
             {/* Settings */}
@@ -93,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
                 title="App Settings"
               >
-                <span className="material-symbols-outlined text-[19px]">settings</span>
+                <Settings size={18} />
               </button>
             )}
 
@@ -108,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
             {userName ? (
               <span>{getUserInitials(userName)}</span>
             ) : (
-              <span className="material-symbols-outlined text-[18px]">cloud_sync</span>
+              <Cloud size={17} />
             )}
             <span
               className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-black"

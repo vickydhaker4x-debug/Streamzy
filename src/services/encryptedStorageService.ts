@@ -10,6 +10,19 @@
 
 import { Track, DownloadRecord } from '../types';
 import { sanitizeTrackForPersistence } from './musicNormalizationService';
+import { nativeAudioPlayerService } from './nativeAudioPlayerService';
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  const chunkSize = 0x8000;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  return btoa(binary);
+}
 
 const DB_NAME = 'VD_MUSIC_ENCRYPTED_VAULT_V1';
 const DB_VERSION = 1;
@@ -189,7 +202,7 @@ class EncryptedStorageService {
       quality: track.quality || '320kbps High-Res Audio'
     };
 
-    return new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const tx = this.db!.transaction([STORE_AUDIO], 'readwrite');
       const store = tx.objectStore(STORE_AUDIO);
       const req = store.put(record);
@@ -197,14 +210,36 @@ class EncryptedStorageService {
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
+
+    // If running in Android native container, also mirror to native offline vault for ExoPlayer
+    if (nativeAudioPlayerService.isNative()) {
+      try {
+        const base64 = arrayBufferToBase64(rawAudioBuffer);
+        await nativeAudioPlayerService.saveOfflineAudio(track.id, base64, mimeType);
+      } catch (err) {
+        console.warn('[EncryptedStorage] Native offline file mirror error:', err);
+      }
+    }
   }
 
   /**
    * Instant in-memory decryption of track audio
-   * Returns an ephemeral Blob URL strictly for the local audio player
+   * Returns a local file:// URI on Android or an ephemeral Blob URL in web browser
    */
   public async getDecryptedAudioUrl(trackId: string): Promise<string | null> {
-    // If we already decrypted this track recently, return the existing URL
+    // If on native Android, check if file exists in native offline vault first
+    if (nativeAudioPlayerService.isNative()) {
+      try {
+        const nativeUri = await nativeAudioPlayerService.getOfflineAudioUri(trackId);
+        if (nativeUri) {
+          return nativeUri;
+        }
+      } catch (err) {
+        console.warn('[EncryptedStorage] Native offline URI check error:', err);
+      }
+    }
+
+    // If we already decrypted this track recently for web, return the existing URL
     if (this.activeBlobUrls.has(trackId)) {
       return this.activeBlobUrls.get(trackId)!;
     }
@@ -228,6 +263,19 @@ class EncryptedStorageService {
         key,
         record.ciphertext
       );
+
+      // On Android native, write decrypted buffer to native vault and return file:// URI for ExoPlayer
+      if (nativeAudioPlayerService.isNative()) {
+        try {
+          const base64 = arrayBufferToBase64(decryptedBuffer);
+          const savedUri = await nativeAudioPlayerService.saveOfflineAudio(trackId, base64, record.mimeType || 'audio/mp4');
+          if (savedUri) {
+            return savedUri;
+          }
+        } catch (err) {
+          console.warn('[EncryptedStorage] Failed to save decrypted buffer to native vault:', err);
+        }
+      }
 
       const blob = new Blob([decryptedBuffer], { type: record.mimeType || 'audio/mp4' });
       const blobUrl = URL.createObjectURL(blob);
@@ -306,6 +354,14 @@ class EncryptedStorageService {
     if (this.activeBlobUrls.has(trackId)) {
       URL.revokeObjectURL(this.activeBlobUrls.get(trackId)!);
       this.activeBlobUrls.delete(trackId);
+    }
+
+    if (nativeAudioPlayerService.isNative()) {
+      try {
+        await nativeAudioPlayerService.deleteOfflineAudio(trackId);
+      } catch (err) {
+        console.warn('[EncryptedStorage] Native deleteOfflineAudio error:', err);
+      }
     }
 
     if (this.initPromise) await this.initPromise;

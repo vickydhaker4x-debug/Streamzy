@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { App as CapApp } from '@capacitor/app';
 import { Track, ActiveScreen, SettingsState, MusicMix, MusicVideoItem, PlaybackContext, RepeatMode } from './types';
 import { TRACKS, INITIAL_SETTINGS } from './data/musicData';
@@ -1273,9 +1274,7 @@ export default function App() {
       {vibeToast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 w-full max-w-sm">
           <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_16px_0_rgba(0,0,0,0.2)]/95 backdrop-blur-xl border border-[var(--color-primary)]/40 shadow-2xl shadow-black/80">
-            <span className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)] animate-pulse shrink-0">
-              auto_awesome
-            </span>
+            <Sparkles size={18} className="text-[var(--color-primary)] animate-pulse shrink-0" />
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] font-bold text-[var(--color-primary)] uppercase tracking-wider">
                 Tailoring Queue &amp; Home
@@ -1293,7 +1292,7 @@ export default function App() {
         {/* Real-time Network Offline & Encrypted Vault Ribbon */}
         <NetworkOfflineBanner onOpenDownloads={() => setActiveScreen('library')} />
 
-        <Suspense fallback={<div className="flex w-full h-full items-center justify-center pt-24"><span className="material-symbols-outlined floating-icon text-4xl text-red-500 animate-spin">progress_activity</span></div>}>
+        <Suspense fallback={<div className="flex w-full h-full items-center justify-center pt-24"><Loader2 size={36} className="text-red-500 animate-spin" /></div>}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeScreen}

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { ArrowLeft, Heart, Play, Shuffle, DownloadCloud, Search, CheckCircle2, Download } from 'lucide-react';
 import { Track } from '../../types';
 import { TrackImage } from '../TrackImage';
 import { formatTotalDuration } from '../../services/libraryDataService';
@@ -71,7 +72,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
             onClick={onBack}
             className="flex items-center gap-1.5 text-[13px] font-bold text-[#a1a1aa] hover:text-[#e4e1e7] transition-colors cursor-pointer py-1"
           >
-            <span className="material-symbols-outlined floating-icon text-[20px]">arrow_back</span>
+            <ArrowLeft size={18} />
             Back
           </button>
         </div>
@@ -93,15 +94,11 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
                 />
               ))}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <span className="material-symbols-outlined floating-icon text-[32px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  favorite
-                </span>
+                <Heart size={32} className="text-white fill-current" />
               </div>
             </div>
           ) : (
-            <span className="material-symbols-outlined floating-icon text-[44px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              favorite
-            </span>
+            <Heart size={44} className="text-white fill-current" />
           )}
         </div>
 
@@ -128,9 +125,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
                 onClick={() => onPlayQueue(processedTracks, 0)}
                 className="px-5 py-2.5 rounded-full bg-[var(--color-primary)] text-[#670211] text-[13px] font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer floating-btn"
               >
-                <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  play_arrow
-                </span>
+                <Play size={18} className="fill-current" />
                 Play All
               </button>
 
@@ -140,7 +135,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
                 className="w-10 h-10 rounded-full liquid-glass hover:bg-white/20 text-[#e4e1e7] flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-white/10"
                 title="Shuffle Liked Songs"
               >
-                <span className="material-symbols-outlined floating-icon text-[19px]">shuffle</span>
+                <Shuffle size={18} />
               </button>
 
               <button
@@ -149,7 +144,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
                 className="w-10 h-10 rounded-full liquid-glass hover:bg-white/20 text-emerald-400 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-white/10"
                 title="Download All Liked Songs"
               >
-                <span className="material-symbols-outlined floating-icon text-[19px]">download_for_offline</span>
+                <DownloadCloud size={18} />
               </button>
             </>
           )}
@@ -160,9 +155,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
       {likedTracks.length > 0 && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined floating-icon absolute left-3.5 top-2.5 text-[#a1a1aa] text-[18px]">
-              search
-            </span>
+            <Search size={18} className="absolute left-3.5 top-2.5 text-[#a1a1aa]" />
             <input
               id="search-liked-songs-input"
               type="text"
@@ -196,7 +189,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
       {likedTracks.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center p-10 liquid-glass rounded-3xl border border-white/[0.04] my-2">
           <div className="w-16 h-16 rounded-2xl liquid-glass text-[#a1a1aa] flex items-center justify-center mb-3">
-            <span className="material-symbols-outlined floating-icon text-[32px]">favorite_border</span>
+            <Heart size={32} />
           </div>
           <h3 className="text-[17px] font-bold text-[#e4e1e7]">No Liked Songs Yet</h3>
           <p className="text-[13px] text-[#a1a1aa] max-w-sm mt-1">
@@ -264,9 +257,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
                       downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                     }`}
                   >
-                    <span className="material-symbols-outlined floating-icon text-[18px]">
-                      {downloaded ? 'check_circle' : 'download'}
-                    </span>
+                    {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
                   </button>
 
                   <button
@@ -274,9 +265,7 @@ export const LikedSongsView: React.FC<LikedSongsViewProps> = ({
                     onClick={() => onToggleFavorite(track.id)}
                     className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-primary)] hover:bg-white/5 active:scale-90 transition-all cursor-pointer"
                   >
-                    <span className="material-symbols-outlined floating-icon text-[19px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      favorite
-                    </span>
+                    <Heart size={16} className="fill-current" />
                   </button>
 
                   <span className="text-[12px] text-[#a1a1aa] font-mono min-w-[36px] text-right">

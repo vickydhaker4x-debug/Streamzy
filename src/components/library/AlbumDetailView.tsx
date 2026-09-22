@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { ArrowLeft, Play, Shuffle, CheckCircle2, Download, Heart } from 'lucide-react';
 import { Track } from '../../types';
 import { EnrichedAlbum, extractAlbums } from '../../services/libraryDataService';
 import { TrackImage } from '../TrackImage';
@@ -72,7 +73,7 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
           onClick={onBack}
           className="flex items-center gap-1.5 text-[13px] font-bold text-[#a1a1aa] hover:text-[#e4e1e7] transition-colors cursor-pointer py-1"
         >
-          <span className="material-symbols-outlined floating-icon text-[20px]">arrow_back</span>
+          <ArrowLeft size={18} />
           Back to Albums
         </button>
       </div>
@@ -118,9 +119,7 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
             onClick={() => onPlayAlbum(album.tracks, 0)}
             className="px-5 py-2.5 rounded-full bg-[var(--color-primary)] text-[#670211] text-[13px] font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer floating-btn"
           >
-            <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              play_arrow
-            </span>
+            <Play size={18} className="fill-current" />
             Play
           </button>
           <button
@@ -129,7 +128,7 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
             className="w-10 h-10 rounded-full liquid-glass hover:bg-white/20 text-[#e4e1e7] flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-white/10"
             title="Smart Shuffle Album"
           >
-            <span className="material-symbols-outlined floating-icon text-[19px]">shuffle</span>
+            <Shuffle size={18} />
           </button>
         </div>
       </div>
@@ -205,9 +204,7 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
                       downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                     }`}
                   >
-                    <span className="material-symbols-outlined floating-icon text-[18px]">
-                      {downloaded ? 'check_circle' : 'download'}
-                    </span>
+                    {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
                   </button>
 
                   {/* Favorite button */}
@@ -219,12 +216,7 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
                       track.isFavorite ? 'text-[var(--color-primary)]' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                     }`}
                   >
-                    <span
-                      className="material-symbols-outlined floating-icon text-[18px]"
-                      style={{ fontVariationSettings: track.isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                    >
-                      {track.isFavorite ? 'favorite' : 'favorite_border'}
-                    </span>
+                    <Heart size={16} className={track.isFavorite ? 'fill-current' : ''} />
                   </button>
 
                   <span className="text-[12px] text-[#a1a1aa] font-mono min-w-[36px] text-right">

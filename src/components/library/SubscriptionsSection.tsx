@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { BellOff, Sparkles, Volume2, CheckCircle2, Download, Heart, Check, Plus } from 'lucide-react';
 import { Track } from '../../types';
 import { EnrichedArtist } from '../../services/libraryDataService';
 import { subscriptionService } from '../../services/subscriptionService';
@@ -67,7 +68,7 @@ export const SubscriptionsSection: React.FC<SubscriptionsSectionProps> = ({
         {followedArtists.length === 0 ? (
           <div className="p-8 text-center liquid-glass rounded-3xl border border-white/[0.04]">
             <div className="w-14 h-14 rounded-2xl liquid-glass text-[#a1a1aa] flex items-center justify-center mx-auto mb-3">
-              <span className="material-symbols-outlined floating-icon text-[28px]">notifications_none</span>
+              <BellOff size={28} />
             </div>
             <h3 className="text-[16px] font-bold text-[#e4e1e7]">No Subscriptions Yet</h3>
             <p className="text-[12px] text-[#a1a1aa] max-w-sm mx-auto mt-1">
@@ -105,9 +106,7 @@ export const SubscriptionsSection: React.FC<SubscriptionsSectionProps> = ({
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)]">
-                new_releases
-              </span>
+              <Sparkles size={18} className="text-[var(--color-primary)]" />
               <span className="text-[12px] uppercase font-bold tracking-wider text-[#a1a1aa]">
                 Tracks from Your Subscriptions
               </span>
@@ -139,9 +138,7 @@ export const SubscriptionsSection: React.FC<SubscriptionsSectionProps> = ({
                       />
                       {isThisActive && isPlaying && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <span className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)] animate-pulse">
-                            volume_up
-                          </span>
+                          <Volume2 size={18} className="text-[var(--color-primary)] animate-pulse" />
                         </div>
                       )}
                     </div>
@@ -164,9 +161,7 @@ export const SubscriptionsSection: React.FC<SubscriptionsSectionProps> = ({
                         downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                       }`}
                     >
-                      <span className="material-symbols-outlined floating-icon text-[18px]">
-                        {downloaded ? 'check_circle' : 'download'}
-                      </span>
+                      {downloaded ? <CheckCircle2 size={18} /> : <Download size={18} />}
                     </button>
 
                     <button
@@ -176,12 +171,10 @@ export const SubscriptionsSection: React.FC<SubscriptionsSectionProps> = ({
                         track.isFavorite ? 'text-[var(--color-primary)]' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
                       }`}
                     >
-                      <span
-                        className="material-symbols-outlined floating-icon text-[18px]"
-                        style={{ fontVariationSettings: track.isFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                      >
-                        {track.isFavorite ? 'favorite' : 'favorite_border'}
-                      </span>
+                      <Heart
+                        size={18}
+                        className={track.isFavorite ? 'fill-current' : ''}
+                      />
                     </button>
 
                     <span className="text-[12px] text-[#a1a1aa] font-mono min-w-[36px] text-right">
@@ -235,9 +228,7 @@ export const SubscriptionsSection: React.FC<SubscriptionsSectionProps> = ({
                         : 'bg-[var(--color-primary)] text-[#670211]'
                     }`}
                   >
-                    <span className="material-symbols-outlined floating-icon text-[16px]">
-                      {isSub ? 'check' : 'add'}
-                    </span>
+                    {isSub ? <Check size={14} /> : <Plus size={14} />}
                     {isSub ? 'Following' : 'Subscribe'}
                   </button>
                 </div>

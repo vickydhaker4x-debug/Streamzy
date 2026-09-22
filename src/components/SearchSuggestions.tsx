@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { History, ArrowUpLeft, X, Music, Play, Search, User, Disc3 } from 'lucide-react';
 import { Track, Artist, Album, Playlist, MusicMix } from '../types';
 import { fetchSearchSuggestions } from '../utils/pipedApi';
 import { searchEngine, SearchSuggestionItem } from '../services/searchEngine';
@@ -113,7 +114,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
       <div className="w-full liquid-glass/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-3 shadow-2xl flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-150 z-20">
         <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.04]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#a1a1aa] flex items-center gap-1.5">
-            <span className="material-symbols-outlined floating-icon text-[15px]">history</span>
+            <History size={14} />
             Recent Searches
           </span>
           <button
@@ -132,9 +133,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
               onClick={() => onSelectQuery(item)}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="material-symbols-outlined floating-icon text-[#71717a] group-hover:text-[var(--color-primary)] text-[18px]">
-                  history
-                </span>
+                <History size={16} className="text-[#71717a] group-hover:text-[var(--color-primary)] transition-colors" />
                 <span className="text-[13px] text-[#e4e1e7] truncate group-hover:text-white">
                   {item}
                 </span>
@@ -148,7 +147,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                   title="Insert into search"
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/[0.06] cursor-pointer"
                 >
-                  <span className="material-symbols-outlined floating-icon text-[16px]">north_west</span>
+                  <ArrowUpLeft size={15} />
                 </button>
                 <button
                   onClick={(e) => {
@@ -158,7 +157,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                   title="Remove from history"
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-[#71717a] hover:text-rose-400 hover:bg-white/[0.06] cursor-pointer"
                 >
-                  <span className="material-symbols-outlined floating-icon text-[16px]">close</span>
+                  <X size={15} />
                 </button>
               </div>
             </div>
@@ -203,7 +202,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.06]">
             <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px]">music_note</span>
+              <Music size={14} />
               Songs related to &ldquo;{query}&rdquo;
             </span>
             <span className="text-[10px] text-zinc-400">
@@ -228,11 +227,11 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-zinc-400">
-                        <span className="material-symbols-outlined text-[18px]">music_note</span>
+                        <Music size={18} />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <span className="material-symbols-outlined text-white text-[18px]">play_arrow</span>
+                      <Play size={18} className="text-white fill-current" />
                     </div>
                   </div>
 
@@ -260,7 +259,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                     title="Insert into search"
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[16px]">north_west</span>
+                    <ArrowUpLeft size={15} />
                   </button>
                 </div>
               </div>
@@ -274,7 +273,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.06]">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px]">search</span>
+              <Search size={14} />
               Related Searches
             </span>
           </div>
@@ -287,9 +286,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                 className="flex items-center justify-between px-2.5 py-1.5 hover:bg-white/[0.1] rounded-xl group cursor-pointer transition-all"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="material-symbols-outlined text-zinc-500 group-hover:text-rose-400 text-[18px]">
-                    search
-                  </span>
+                  <Search size={16} className="text-zinc-500 group-hover:text-rose-400 transition-colors" />
                   <span className="text-[13px] text-zinc-200 truncate group-hover:text-white">
                     {highlightMatch(item.title, trimmedQuery)}
                   </span>
@@ -302,7 +299,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                   title="Insert into search"
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0"
                 >
-                  <span className="material-symbols-outlined text-[16px]">north_west</span>
+                  <ArrowUpLeft size={15} />
                 </button>
               </div>
             ))}
@@ -315,7 +312,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between px-2 pb-1 border-b border-white/[0.06]">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[15px]">person</span>
+              <User size={14} />
               Artists &amp; Albums
             </span>
           </div>
@@ -338,9 +335,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-zinc-400">
-                      <span className="material-symbols-outlined text-[16px]">
-                        {item.type === 'artist' ? 'person' : 'album'}
-                      </span>
+                      {item.type === 'artist' ? <User size={16} /> : <Disc3 size={16} />}
                     </div>
                   )}
 

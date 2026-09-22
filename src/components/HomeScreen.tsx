@@ -1,4 +1,19 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
+import {
+  RefreshCw,
+  CheckCircle2,
+  ArrowDown,
+  Search,
+  X,
+  ArrowRight,
+  SlidersHorizontal,
+  Play,
+  Pause,
+  Heart,
+  Sun,
+  Sunset,
+  Moon
+} from 'lucide-react';
 import { Track, Album, MusicMix, MusicVideoItem, TimeOfDay } from '../types';
 import { RECOMMENDED_MUSIC_VIDEOS } from '../data/ytmModulesData';
 import { TrackImage } from './TrackImage';
@@ -58,6 +73,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [refreshCounter, setRefreshCounter] = useState(0);
   const touchStartY = useRef<number>(0);
   const isPulling = useRef<boolean>(false);
+
+  const renderTimeIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'wb_sunny':
+      case 'light_mode':
+        return <Sun size={20} />;
+      case 'wb_twilight':
+        return <Sunset size={20} />;
+      case 'bedtime':
+      default:
+        return <Moon size={20} />;
+    }
+  };
 
   // Derive dynamic personalized home data directly or fallback to service generator
   const dynamicHomeData = useMemo(() => {
@@ -143,26 +171,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <div className="flex items-center gap-2 px-4 py-1.5 rounded-full liquid-glass shadow-lg text-[12px] font-semibold text-[#e4e1e7]">
             {isRefreshing ? (
               <>
-                <span className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)] animate-spin">
-                  sync
-                </span>
+                <RefreshCw size={18} className="text-[var(--color-primary)] animate-spin" />
                 <span>Refreshing recommendations...</span>
               </>
             ) : refreshSuccess ? (
               <>
-                <span className="material-symbols-outlined floating-icon text-[18px] text-green-400">
-                  check_circle
-                </span>
+                <CheckCircle2 size={18} className="text-green-400" />
                 <span className="text-green-300 font-bold">Feed Updated!</span>
               </>
             ) : (
               <>
-                <span
-                  className="material-symbols-outlined floating-icon text-[18px] text-[var(--color-primary)] transition-transform"
+                <ArrowDown
+                  size={18}
+                  className="text-[var(--color-primary)] transition-transform"
                   style={{ transform: `rotate(${Math.min(pullY * 4, 360)}deg)` }}
-                >
-                  arrow_downward
-                </span>
+                />
                 <span>{pullY > 50 ? 'Release to refresh' : 'Pull down to refresh'}</span>
               </>
             )}
@@ -175,9 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
-              <span className="material-symbols-outlined floating-icon text-[20px]">
-                {timeContext.icon}
-              </span>
+              {renderTimeIcon(timeContext.icon)}
             </div>
             <div className="flex flex-col min-w-0">
               <h1 className="text-[22px] sm:text-[24px] font-black text-white tracking-tight leading-tight truncate">
@@ -196,9 +217,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             onClick={() => onNavigateToSearch?.(homeSearchQuery || '')}
             className="flex items-center w-full h-12 bg-[#170C1A]/85 hover:bg-[#221026] rounded-2xl px-4 border border-white/10 hover:border-[#FE385E]/50 shadow-lg cursor-pointer transition-all group"
           >
-            <span className="material-symbols-outlined text-[#FE385E] text-[22px] mr-3 group-hover:scale-110 transition-transform">
-              search
-            </span>
+            <Search size={22} className="text-[#FE385E] mr-3 group-hover:scale-110 transition-transform" />
             <input
               type="text"
               value={homeSearchQuery}
@@ -220,7 +239,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 }}
                 className="text-zinc-400 hover:text-white p-1 mr-1.5 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <X size={18} />
               </button>
             )}
             <button
@@ -231,7 +250,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               className="px-3.5 py-1.5 rounded-xl bg-[#FE385E] hover:bg-[#FF4D71] text-white text-xs font-bold transition shrink-0 flex items-center gap-1 shadow-[0_0_14px_rgba(254,56,94,0.4)] cursor-pointer"
             >
               <span>Search</span>
-              <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+              <ArrowRight size={15} />
             </button>
           </div>
 
@@ -289,9 +308,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             <div className={`w-9 h-9 rounded-full bg-[var(--color-primary)] text-black flex items-center justify-center shadow-lg transition-transform ${
                               isThisActive ? 'scale-100' : 'opacity-0 group-hover:opacity-100 group-hover:scale-100'
                             }`}>
-                              <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                                {isThisActive && isPlaying ? 'pause' : 'play_arrow'}
-                              </span>
+                              {isThisActive && isPlaying ? (
+                                <Pause size={20} className="fill-current" />
+                              ) : (
+                                <Play size={20} className="fill-current translate-x-0.5" />
+                              )}
                             </div>
                           </div>
                           {/* Resume indicator bar */}
@@ -361,9 +382,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         />
                         <div className="absolute inset-0 bg-black/25 group-hover:bg-black/45 transition-colors flex items-center justify-center">
                           <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                            <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                              play_arrow
-                            </span>
+                            <Play size={20} className="fill-current translate-x-0.5" />
                           </div>
                         </div>
                       </div>
@@ -423,9 +442,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         />
                         <div className="absolute inset-0 bg-black/25 group-hover:bg-black/45 transition-colors flex items-center justify-center">
                           <div className="w-9 h-9 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                            <span className="material-symbols-outlined floating-icon text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                              play_arrow
-                            </span>
+                            <Play size={20} className="fill-current translate-x-0.5" />
                           </div>
                         </div>
                       </div>
