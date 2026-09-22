@@ -117,7 +117,11 @@ export class AudioEngine {
     }
   }
 
+  private isBridgeInitialized: boolean = false;
+
   private initNativePlayerBridge() {
+    if (this.isBridgeInitialized) return;
+    this.isBridgeInitialized = true;
     nativeAudioPlayerService.initialize();
     nativeAudioPlayerService.registerHandler({
       onTimeUpdate: (sec) => {
@@ -465,6 +469,7 @@ export class AudioEngine {
 
     // Delegate to native Android ExoPlayer MediaSession service when running on Android
     if (nativeAudioPlayerService.isNative()) {
+      this.initNativePlayerBridge();
       if (this.primaryAudio) {
         this.primaryAudio.pause();
         this.primaryAudio.removeAttribute('src');

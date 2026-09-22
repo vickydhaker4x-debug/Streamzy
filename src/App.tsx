@@ -39,6 +39,7 @@ import { offlineDatabaseService } from './services/offlineDatabaseService';
 import { realtimeSyncService } from './services/realtimeSyncService';
 import { authClient } from './services/authClient';
 import { telemetryClient } from './services/telemetryClient';
+import { nativeAudioPlayerService } from './services/nativeAudioPlayerService';
 
 export default function App() {
   const [userName, setUserName] = useState<string>(() => {
@@ -194,6 +195,65 @@ export default function App() {
 
   const playbackContextRef = useRef<PlaybackContext>(playbackContext);
   playbackContextRef.current = playbackContext;
+
+  const currentTrackRef = useRef<Track | null>(currentTrack);
+  currentTrackRef.current = currentTrack;
+
+  // Real-time synchronization with native media player & ExoPlayer bridge
+  useEffect(() => {
+    const unsubNative = nativeAudioPlayerService.registerHandler({
+      onTimeUpdate: (positionSec, durationSec) => {
+        const flooredSec = Math.floor(positionSec);
+        setCurrentTimeSec(flooredSec);
+        if (currentTrackRef.current) {
+          const totalDur = durationSec || currentTrackRef.current.durationSec || 0;
+          telemetryClient.onTimeUpdate(flooredSec, totalDur);
+          historyService.recordPlayProgress(currentTrackRef.current, flooredSec, totalDur, playbackContextRef.current);
+        }
+      },
+      onStateChanged: (playing) => {
+        setIsPlaying(playing);
+      },
+      onTrackChanged: (trackPayload) => {
+        if (trackPayload) {
+          setCurrentTimeSec(0);
+          setIsPlaying(true);
+        }
+      }
+    });
+
+    // Re-sync position and playing state when app returns to foreground from lockscreen / background
+    const syncPlaybackFromNative = async () => {
+      if (nativeAudioPlayerService.isNative()) {
+        try {
+          const state = await nativeAudioPlayerService.getPlaybackState();
+          if (state) {
+            if (typeof state.isPlaying === 'boolean') {
+              setIsPlaying(state.isPlaying);
+            }
+            if (typeof state.positionSec === 'number') {
+              setCurrentTimeSec(Math.floor(state.positionSec));
+            }
+          }
+        } catch {}
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        syncPlaybackFromNative();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', syncPlaybackFromNative);
+
+    return () => {
+      unsubNative();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', syncPlaybackFromNative);
+    };
+  }, []);
 
   // Listen to history updates
   useEffect(() => {

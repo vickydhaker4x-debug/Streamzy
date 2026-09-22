@@ -161,30 +161,39 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const handleSeekFromClientX = (clientX: number) => {
+  const handleSeekFromClientX = (clientX: number, commit: boolean = false) => {
     if (!progressBarRef.current) return;
     const rect = progressBarRef.current.getBoundingClientRect();
     const clickX = clientX - rect.left;
     const ratio = Math.max(0, Math.min(1, clickX / rect.width));
     const newSec = Math.floor(ratio * durationSec);
     setDragProgressSec(newSec);
-    onSeek(newSec);
+    if (commit) {
+      onSeek(newSec);
+    }
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(true);
-    handleSeekFromClientX(e.clientX);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    handleSeekFromClientX(e.clientX, false);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isDragging) {
-      handleSeekFromClientX(e.clientX);
+      handleSeekFromClientX(e.clientX, false);
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isDragging) {
       setIsDragging(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+      handleSeekFromClientX(e.clientX, true);
     }
   };
 

@@ -737,14 +737,53 @@ public class MediaNotificationService extends Service implements Player.Listener
     // ==========================================
 
     @Override
+    public void onIsPlayingChanged(boolean isPlaying) {
+        Log.d(TAG, "ExoPlayer onIsPlayingChanged: isPlaying=" + isPlaying + " posMs=" + getCurrentPositionMs() + " durMs=" + getDurationMs());
+        if (isPlaying) {
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING, getCurrentPositionMs());
+            startPositionTracker();
+            long posSec = Math.max(0, getCurrentPositionMs() / 1000L);
+            long durSec = Math.max(0, getDurationMs() / 1000L);
+            if (eventListener != null) {
+                eventListener.onPlaybackPosition(posSec, durSec);
+                if (currentTrack != null) {
+                    eventListener.onPlaybackStarted(currentTrack, posSec, durSec);
+                }
+            }
+        } else {
+            if (exoPlayer != null && exoPlayer.getPlaybackState() != Player.STATE_ENDED) {
+                updatePlaybackState(PlaybackStateCompat.STATE_PAUSED, getCurrentPositionMs());
+            }
+        }
+    }
+
+    @Override
     public void onPlaybackStateChanged(int playbackState) {
         if (playbackState == Player.STATE_READY) {
-            updatePlaybackState(exoPlayer.isPlaying() ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED, getCurrentPositionMs());
+            boolean playing = exoPlayer != null && exoPlayer.isPlaying();
+            updatePlaybackState(playing ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED, getCurrentPositionMs());
+            if (playing) {
+                startPositionTracker();
+            }
+            long posSec = Math.max(0, getCurrentPositionMs() / 1000L);
+            long durSec = Math.max(0, getDurationMs() / 1000L);
+            if (eventListener != null) {
+                eventListener.onPlaybackPosition(posSec, durSec);
+            }
         } else if (playbackState == Player.STATE_ENDED) {
             Log.d(TAG, "ExoPlayer track ended naturally: " + (currentTrack != null ? currentTrack.getTitle() : ""));
             handleTrackEnded();
         } else if (playbackState == Player.STATE_BUFFERING) {
             updatePlaybackState(PlaybackStateCompat.STATE_BUFFERING, getCurrentPositionMs());
+        }
+    }
+
+    @Override
+    public void onPositionDiscontinuity(Player.PositionInfo oldPosition, Player.PositionInfo newPosition, int reason) {
+        long posSec = Math.max(0, newPosition.positionMs / 1000L);
+        long durSec = Math.max(0, getDurationMs() / 1000L);
+        if (eventListener != null) {
+            eventListener.onPlaybackPosition(posSec, durSec);
         }
     }
 
@@ -778,31 +817,43 @@ public class MediaNotificationService extends Service implements Player.Listener
     }
 
     // ==========================================
-    // Progress Tracker (1s interval)
+    // Progress Tracker (Smooth 500ms interval)
     // ==========================================
 
     private final Runnable positionRunnable = new Runnable() {
         @Override
         public void run() {
-            if (isTrackingPosition && exoPlayer != null && exoPlayer.isPlaying()) {
-                long posSec = getCurrentPositionMs() / 1000;
-                long durSec = getDurationMs() / 1000;
+            if (!isTrackingPosition) return;
 
-                if (eventListener != null) {
+            if (exoPlayer != null) {
+                boolean playing = exoPlayer.isPlaying();
+                long currentPosMs = exoPlayer.getCurrentPosition();
+                long durationMs = exoPlayer.getDuration();
+                if (durationMs <= 0 && currentTrack != null) {
+                    durationMs = currentTrack.getDurationSec() * 1000L;
+                }
+
+                long posSec = Math.max(0, currentPosMs / 1000L);
+                long durSec = Math.max(0, durationMs / 1000L);
+
+                if (eventListener != null && playing) {
                     eventListener.onPlaybackPosition(posSec, durSec);
                 }
 
-                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING, getCurrentPositionMs());
-                mainHandler.postDelayed(this, 1000);
+                if (playing) {
+                    updatePlaybackState(PlaybackStateCompat.STATE_PLAYING, currentPosMs);
+                }
             }
+
+            // Keep ticker scheduling alive while isTrackingPosition is true
+            mainHandler.postDelayed(this, 500);
         }
     };
 
     private void startPositionTracker() {
-        if (!isTrackingPosition) {
-            isTrackingPosition = true;
-            mainHandler.post(positionRunnable);
-        }
+        isTrackingPosition = true;
+        mainHandler.removeCallbacks(positionRunnable);
+        mainHandler.post(positionRunnable);
     }
 
     private void stopPositionTracker() {
