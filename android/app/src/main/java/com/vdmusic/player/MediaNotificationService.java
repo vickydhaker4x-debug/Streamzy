@@ -738,7 +738,7 @@ public class MediaNotificationService extends Service implements Player.Listener
         boolean isPlay = exoPlayer != null && exoPlayer.isPlaying();
         int state = exoPlayer != null ? exoPlayer.getPlaybackState() : Player.STATE_IDLE;
         boolean pwr = exoPlayer != null ? exoPlayer.getPlayWhenReady() : false;
-        boolean loading = exoPlayer != null && exoPlayer.isLoading() : false;
+        boolean loading = exoPlayer != null && exoPlayer.isLoading();
         String stateStr = state == Player.STATE_IDLE ? "STATE_IDLE" :
                           state == Player.STATE_BUFFERING ? "STATE_BUFFERING" :
                           state == Player.STATE_READY ? "STATE_READY" :
