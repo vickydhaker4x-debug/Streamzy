@@ -104,7 +104,7 @@ export async function searchAppleMusicTracks(query: string, signal?: AbortSignal
         durationSec: durationSec,
         coverUrl: hdArt,
         albumArt: hdArt,
-        audioUrl: item.previewUrl || undefined,
+        audioUrl: undefined, // Do not treat 30-second preview as full audio URL
         quality: '256kbps High Quality',
         genre: item.primaryGenreName || 'Music',
         isFavorite: false,

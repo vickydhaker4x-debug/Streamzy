@@ -514,6 +514,16 @@ export class AudioEngine {
       }
 
       let directUrl = currentTrackObj.audioUrl || currentTrackObj.streamUrl || '';
+      // Never treat an iTunes preview or 30-second sample as a full song
+      if (directUrl && (
+        directUrl.includes('AudioPreview') ||
+        directUrl.includes('audio-ssl') ||
+        directUrl.includes('previewUrl') ||
+        directUrl.includes('itunes.apple.com')
+      )) {
+        console.warn('[AudioEngine] Rejecting 30-second preview URL in favor of full stream');
+        directUrl = '';
+      }
       let resolvedMimeType = 'audio/mp4';
       let resolvedStreamInfo: StreamInfo | null = null;
 
@@ -713,8 +723,11 @@ export class AudioEngine {
     if (this.primaryAudio.src !== streamRecord.url) {
       this.primaryAudio.pause();
       this.primaryAudio.src = streamRecord.url;
+      this.primaryAudio.currentTime = 0;
       this.primaryAudio.load();
       console.log(`[AudioEngine] source attached: ${streamRecord.isBlob ? 'Blob URL' : streamRecord.url.substring(0, 60)}`);
+    } else {
+      this.primaryAudio.currentTime = 0;
     }
 
     this.primaryAudio.muted = false;
@@ -834,17 +847,8 @@ export class AudioEngine {
       }
     }
 
-    // 2. Skip Silence: Intro Trimming
-    if (this.skipSilence && !this.isInitialSilenceSkipped && currentTime >= 0 && currentTime < 0.8) {
-      this.isInitialSilenceSkipped = true;
-      if (currentTime < 1.4) {
-        this.seek(1.5);
-        return;
-      }
-    }
-
-    // 3. Keep playing naturally until the audio element genuinely ends
-    // (Outro trimming removed to prevent premature skips)
+    // Keep playing naturally until the audio element genuinely ends
+    // (Intro auto-skips and artificial seeking removed to guarantee songs start at 0:00)
 
     // 4. Update Adaptive Bitrate buffer health metrics
     if (this.primaryAudio && (this.currentMode === 'audio' || this.currentMode === 'backend')) {
@@ -1031,11 +1035,6 @@ export class AudioEngine {
               end: Number(item.segment[1])
             }))
             .sort((a, b) => a.start - b.start);
-
-          if (this.sponsorSegments.length > 0 && this.sponsorSegments[0].start <= 2.5) {
-            const skipTo = this.sponsorSegments[0].end;
-            setTimeout(() => this.seek(skipTo), 300);
-          }
         }
       }
     } catch {}

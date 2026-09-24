@@ -362,6 +362,17 @@ public class MediaNotificationService extends Service implements Player.Listener
                 ? track.getStreamUrl()
                 : null;
 
+        // Never treat an iTunes preview or 30-second sample as a full song
+        if (directPlayable != null && (
+                directPlayable.contains("AudioPreview") ||
+                directPlayable.contains("previewUrl") ||
+                directPlayable.contains("itunes.apple.com") ||
+                directPlayable.contains("audio-ssl")
+        )) {
+            Log.w(TAG, "[VDMUSIC_PLAY] Detected 30-second preview URL, resolving full-length audio stream instead: " + directPlayable);
+            directPlayable = null;
+        }
+
         if (directPlayable != null) {
             Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " directPlayable provided: " + directPlayable);
             executePlayUrl(directPlayable, track, mimeType != null ? mimeType : "audio/mp4", generation);
@@ -419,7 +430,7 @@ public class MediaNotificationService extends Service implements Player.Listener
                     exoPlayer.pause();
                     exoPlayer.stop();
                     exoPlayer.clearMediaItems();
-                    exoPlayer.seekTo(0);
+                    exoPlayer.seekTo(0, 0L);
 
                     MediaItem.Builder mediaBuilder = new MediaItem.Builder()
                             .setUri(Uri.parse(url));
@@ -433,7 +444,7 @@ public class MediaNotificationService extends Service implements Player.Listener
                     }
 
                     MediaItem mediaItem = mediaBuilder.build();
-                    exoPlayer.setMediaItem(mediaItem);
+                    exoPlayer.setMediaItem(mediaItem, true);
                     exoPlayer.prepare();
                     exoPlayer.play();
                 }
@@ -796,9 +807,12 @@ public class MediaNotificationService extends Service implements Player.Listener
             long expectedDurMs = (currentTrack != null && currentTrack.getDurationSec() > 0)
                     ? currentTrack.getDurationSec() * 1000L : durMs;
 
-            // Strict check: verify that player genuinely finished, not a premature buffer underrun
-            if (expectedDurMs > 15000 && curMs < expectedDurMs - 4000) {
-                Log.w(TAG, "ExoPlayer premature STATE_ENDED ignored! (pos=" + curMs + "ms, expected=" + expectedDurMs + "ms). Trying to resume stream...");
+            boolean isAtGenuineEnd = (durMs > 0 && curMs >= durMs - 2000) ||
+                                     (expectedDurMs > 0 && curMs >= expectedDurMs - 4000);
+
+            if (!isAtGenuineEnd && curMs < 10000 && expectedDurMs > 30000) {
+                // Buffer drop or network glitch within first 10s of a long track: attempt quick recovery
+                Log.w(TAG, "ExoPlayer premature stream drop at " + curMs + "ms (expected " + expectedDurMs + "ms). Attempting resume...");
                 if (exoPlayer != null) {
                     exoPlayer.seekTo(curMs);
                     exoPlayer.prepare();

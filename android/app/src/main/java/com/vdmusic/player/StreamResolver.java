@@ -1,5 +1,6 @@
 package com.vdmusic.player;
 
+import android.util.Base64;
 import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -8,36 +9,46 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Robust stream resolver utility for native Android playback.
- * Resolves direct playable audio streams (MP4/WebM) from Invidious and Piped endpoints
- * without requiring the WebView to be awake.
+ * Resolves direct playable full-length audio streams (MP4/WebM) from JioSaavn, Invidious, and Piped endpoints.
+ * Never returns 30-second preview clips.
  */
 public class StreamResolver {
     private static final String TAG = "StreamResolver";
-    private static final ExecutorService executor = Executors.newFixedThreadPool(6);
+    private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 
     private static final List<String> INVIDIOUS_ENDPOINTS = Arrays.asList(
-        "https://inv.tux.pizza/api/v1/videos/",
+        "https://inv.nadeko.net/api/v1/videos/",
         "https://invidious.nerdvpn.de/api/v1/videos/",
+        "https://invidious.tiekoetter.com/api/v1/videos/",
+        "https://yt.chocolatemoo53.com/api/v1/videos/",
+        "https://invidious.f5.si/api/v1/videos/",
+        "https://inv-ygg.nadeko.net/api/v1/videos/",
         "https://yewtu.be/api/v1/videos/",
-        "https://invidious.no-valat.net/api/v1/videos/",
-        "https://vid.priv.au/api/v1/videos/",
-        "https://invidious.flokinet.to/api/v1/videos/"
+        "https://invidious.privacydev.net/api/v1/videos/",
+        "https://invidious.projectsegfau.lt/api/v1/videos/",
+        "https://invidious.perennialte.ch/api/v1/videos/"
     );
 
     private static final List<String> PIPED_ENDPOINTS = Arrays.asList(
+        "https://pipedapi.kavin.rocks/streams/",
         "https://api.piped.privacydev.net/streams/",
         "https://pipedapi.ducks.party/streams/",
         "https://pipedapi.nosebs.ru/streams/",
-        "https://piped-api.garudalinux.org/streams/"
+        "https://piped-api.garudalinux.org/streams/",
+        "https://pipedapi.drgns.space/streams/",
+        "https://pa.il.ax/streams/"
     );
 
     public static class ResolvedStream {
@@ -166,7 +177,7 @@ public class StreamResolver {
                     int remaining = pendingTasks.decrementAndGet();
                     if (remaining == 0 && !hasResolved.get()) {
                         if (title != null && !title.trim().isEmpty()) {
-                            queryItunesFallback(title, artist, callback, hasResolved);
+                            queryFullStreamFallback(title, artist, callback, hasResolved);
                         } else {
                             callback.onError("Could not resolve stream for video: " + videoId);
                         }
@@ -176,18 +187,18 @@ public class StreamResolver {
         }
     }
 
-    private static void queryItunesFallback(String title, String artist, StreamCallback callback, AtomicBoolean hasResolved) {
+    private static void queryFullStreamFallback(String title, String artist, StreamCallback callback, AtomicBoolean hasResolved) {
         executor.execute(() -> {
             try {
                 String cleanTitle = title.replaceAll("\\(.*?\\)|\\[.*?\\]", "").trim();
                 String cleanArtist = artist != null ? artist.split("[,&/]")[0].trim() : "";
-                String query = java.net.URLEncoder.encode(cleanTitle + " " + cleanArtist, "UTF-8");
-                URL url = new URL("https://itunes.apple.com/search?term=" + query + "&entity=song&limit=1");
+                String query = java.net.URLEncoder.encode((cleanTitle + " " + cleanArtist).trim(), "UTF-8");
+                URL url = new URL("https://www.jiosaavn.com/api.php?__call=autocomplete.get&_format=json&_marker=0&cc=in&includeMetaTags=1&query=" + query);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(4000);
-                conn.setReadTimeout(4000);
+                conn.setConnectTimeout(4500);
+                conn.setReadTimeout(4500);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
                 if (conn.getResponseCode() == 200) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -197,24 +208,68 @@ public class StreamResolver {
                     reader.close();
 
                     JSONObject data = new JSONObject(sb.toString());
-                    JSONArray results = data.optJSONArray("results");
-                    if (results != null && results.length() > 0) {
-                        JSONObject item = results.getJSONObject(0);
-                        String previewUrl = item.optString("previewUrl", "");
-                        if (!previewUrl.isEmpty() && hasResolved.compareAndSet(false, true)) {
-                            Log.d(TAG, "Resolved via iTunes CDN fallback for: " + title);
-                            callback.onResolved(new ResolvedStream(previewUrl, "audio/mp4", 256000));
-                            return;
+                    JSONObject songsObj = data.optJSONObject("songs");
+                    if (songsObj != null) {
+                        JSONArray songsData = songsObj.optJSONArray("data");
+                        if (songsData != null && songsData.length() > 0) {
+                            String pid = songsData.getJSONObject(0).optString("id", "");
+                            if (!pid.isEmpty()) {
+                                URL detUrl = new URL("https://www.jiosaavn.com/api.php?__call=song.getDetails&pids=" + pid + "&_format=json&_marker=0");
+                                HttpURLConnection detConn = (HttpURLConnection) detUrl.openConnection();
+                                detConn.setConnectTimeout(4500);
+                                detConn.setReadTimeout(4500);
+                                detConn.setRequestMethod("GET");
+                                detConn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+                                if (detConn.getResponseCode() == 200) {
+                                    BufferedReader detReader = new BufferedReader(new InputStreamReader(detConn.getInputStream()));
+                                    StringBuilder detSb = new StringBuilder();
+                                    while ((line = detReader.readLine()) != null) detSb.append(line);
+                                    detReader.close();
+
+                                    JSONObject detData = new JSONObject(detSb.toString());
+                                    JSONObject songInfo = detData.optJSONObject(pid);
+                                    if (songInfo != null) {
+                                        String encUrl = songInfo.optString("encrypted_media_url", "");
+                                        if (!encUrl.isEmpty()) {
+                                            String decryptedUrl = decryptSaavnMediaUrl(encUrl);
+                                            if (decryptedUrl != null && !decryptedUrl.isEmpty()) {
+                                                // High-quality full 320kbps audio stream (with 160kbps/96kbps stability)
+                                                String fullStreamUrl = decryptedUrl.replace("_96.mp4", "_320.mp4");
+                                                if (hasResolved.compareAndSet(false, true)) {
+                                                    Log.d(TAG, "Resolved full 320kbps audio stream for: " + title + " -> " + fullStreamUrl);
+                                                    callback.onResolved(new ResolvedStream(fullStreamUrl, "audio/mp4", 320000));
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             } catch (Exception e) {
-                Log.w(TAG, "iTunes fallback query error: " + e.getMessage());
+                Log.w(TAG, "Full stream fallback query error: " + e.getMessage());
             }
             if (!hasResolved.get()) {
                 callback.onError("Could not resolve stream for: " + title);
             }
         });
+    }
+
+    private static String decryptSaavnMediaUrl(String encryptedUrl) {
+        try {
+            SecretKeySpec keySpec = new SecretKeySpec("38346591".getBytes(StandardCharsets.UTF_8), "DES");
+            Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            byte[] decoded = Base64.decode(encryptedUrl, Base64.DEFAULT);
+            byte[] decrypted = cipher.doFinal(decoded);
+            return new String(decrypted, StandardCharsets.UTF_8).trim();
+        } catch (Exception e) {
+            Log.e(TAG, "DES decryption failed: " + e.getMessage());
+            return null;
+        }
     }
 
     private static ResolvedStream queryInvidiousEndpoint(String endpoint, String videoId) {
