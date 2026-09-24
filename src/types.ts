@@ -85,6 +85,7 @@ export interface Album {
   trackCount?: number;
   genre?: string;
   tracks?: Track[];
+  audioUrl?: string;
 }
 
 export interface FavoriteItem {
@@ -92,6 +93,7 @@ export interface FavoriteItem {
   title: string;
   artist: string;
   coverUrl: string;
+  audioUrl?: string;
 }
 
 export interface Playlist {

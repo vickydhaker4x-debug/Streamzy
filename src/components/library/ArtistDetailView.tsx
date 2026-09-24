@@ -235,17 +235,6 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
 
                 <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <button
-                    aria-label="Toggle download"
-                    title={downloaded ? 'Downloaded' : 'Download'}
-                    onClick={() => onToggleDownload(track)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                      downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
-                    }`}
-                  >
-                    {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
-                  </button>
-
-                  <button
                     aria-label="Toggle favorite"
                     onClick={() => onToggleFavorite(track.id)}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${

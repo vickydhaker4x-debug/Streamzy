@@ -353,10 +353,18 @@ public class MediaNotificationService extends Service implements Player.Listener
             Log.w(TAG, "Error checking offline vault file: " + e.getMessage());
         }
 
-        // 2. If a direct streamUrl is already provided (remote https, file://, or content://)
-        if (streamUrl != null && !streamUrl.trim().isEmpty()) {
-            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " streamUrl provided: " + streamUrl);
-            executePlayUrl(streamUrl, track, mimeType, generation);
+        // 2. If a direct streamUrl or audioUrl is already provided (remote https, file://, or content://)
+        String directPlayable = (streamUrl != null && !streamUrl.trim().isEmpty())
+                ? streamUrl
+                : (track.getAudioUrl() != null && !track.getAudioUrl().trim().isEmpty())
+                ? track.getAudioUrl()
+                : (track.getStreamUrl() != null && !track.getStreamUrl().trim().isEmpty())
+                ? track.getStreamUrl()
+                : null;
+
+        if (directPlayable != null) {
+            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " directPlayable provided: " + directPlayable);
+            executePlayUrl(directPlayable, track, mimeType != null ? mimeType : "audio/mp4", generation);
             return;
         }
 
@@ -369,46 +377,33 @@ public class MediaNotificationService extends Service implements Player.Listener
             return;
         }
 
-        // 4. Resolve stream URL from online endpoints
-        if (track.getVideoId() != null && !track.getVideoId().isEmpty()) {
-            Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " videoId=" + track.getVideoId() + " resolving stream...");
-            StreamResolver.resolveAsync(track.getVideoId(), new StreamResolver.StreamCallback() {
-                @Override
-                public void onResolved(StreamResolver.ResolvedStream stream) {
-                    mainHandler.post(() -> {
-                        if (generation != playbackGeneration) {
-                            Log.d(TAG, "[VDMUSIC_STALE] ignored=true generation=" + generation);
-                            return;
-                        }
-                        track.setStreamUrl(stream.url);
-                        Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " resolved mime=" + stream.mimeType);
-                        executePlayUrl(stream.url, track, stream.mimeType, generation);
-                    });
-                }
-
-                @Override
-                public void onError(String error) {
-                    Log.e(TAG, "Stream resolution failed: " + error);
-                    mainHandler.post(() -> {
-                        if (generation != playbackGeneration) return;
-                        if (eventListener != null) {
-                            eventListener.onPlaybackError("Failed to resolve stream: " + error);
-                        }
-                    });
-                }
-            });
-        } else {
-            String playableUrl = track.getPlayableUrl();
-            if (playableUrl != null && !playableUrl.isEmpty()) {
-                Log.d(TAG, "[VDMUSIC_PLAY] Playing fallback playableUrl: " + playableUrl);
-                executePlayUrl(playableUrl, track, mimeType, generation);
-            } else {
-                Log.e(TAG, "No stream URL or video ID available for track: " + track.getTitle());
-                if (eventListener != null) {
-                    eventListener.onPlaybackError("No playable stream URL available");
-                }
+        // 4. Resolve stream URL from online endpoints with fallback
+        Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " resolving stream via parallel endpoints & fallback...");
+        StreamResolver.resolveWithFallbackAsync(track.getVideoId(), track.getTitle(), track.getArtist(), new StreamResolver.StreamCallback() {
+            @Override
+            public void onResolved(StreamResolver.ResolvedStream stream) {
+                mainHandler.post(() -> {
+                    if (generation != playbackGeneration) {
+                        Log.d(TAG, "[VDMUSIC_STALE] ignored=true generation=" + generation);
+                        return;
+                    }
+                    track.setStreamUrl(stream.url);
+                    Log.d(TAG, "[VDMUSIC_PLAY] generation=" + generation + " songId=" + track.getId() + " resolved mime=" + stream.mimeType);
+                    executePlayUrl(stream.url, track, stream.mimeType, generation);
+                });
             }
-        }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Stream resolution failed: " + error);
+                mainHandler.post(() -> {
+                    if (generation != playbackGeneration) return;
+                    if (eventListener != null) {
+                        eventListener.onPlaybackError("Failed to resolve stream: " + error);
+                    }
+                });
+            }
+        });
     }
 
     private void executePlayUrl(String url, NativeTrack track, @Nullable String mimeType, long generation) {
@@ -736,9 +731,33 @@ public class MediaNotificationService extends Service implements Player.Listener
     // ExoPlayer Listener Implementation
     // ==========================================
 
+    private void logDetailedDiagnostics(String context, PlaybackException error) {
+        long curPos = getCurrentPositionMs();
+        long dur = getDurationMs();
+        long bufPos = exoPlayer != null ? exoPlayer.getBufferedPosition() : 0;
+        boolean isPlay = exoPlayer != null && exoPlayer.isPlaying();
+        int state = exoPlayer != null ? exoPlayer.getPlaybackState() : Player.STATE_IDLE;
+        boolean pwr = exoPlayer != null ? exoPlayer.getPlayWhenReady() : false;
+        boolean loading = exoPlayer != null && exoPlayer.isLoading() : false;
+        String stateStr = state == Player.STATE_IDLE ? "STATE_IDLE" :
+                          state == Player.STATE_BUFFERING ? "STATE_BUFFERING" :
+                          state == Player.STATE_READY ? "STATE_READY" :
+                          state == Player.STATE_ENDED ? "STATE_ENDED" : "UNKNOWN";
+        Log.i("VDMusic-Diagnostic", String.format(
+            "[%s] SongID: %s | Title: %s | URL: %s | PlayerInstance: %s | pos: %d | dur: %d | buf: %d | isPlaying: %b | state: %s | playWhenReady: %b | loading: %b | error: %s",
+            context,
+            currentTrack != null ? currentTrack.getId() : "null",
+            currentTrack != null ? currentTrack.getTitle() : "null",
+            currentTrack != null ? currentTrack.getStreamUrl() : "null",
+            exoPlayer != null ? Integer.toHexString(System.identityHashCode(exoPlayer)) : "null",
+            curPos, dur, bufPos, isPlay, stateStr, pwr, loading,
+            error != null ? error.getMessage() : "none"
+        ));
+    }
+
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
-        Log.d(TAG, "ExoPlayer onIsPlayingChanged: isPlaying=" + isPlaying + " posMs=" + getCurrentPositionMs() + " durMs=" + getDurationMs());
+        logDetailedDiagnostics("onIsPlayingChanged(" + isPlaying + ")", null);
         if (isPlaying) {
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING, getCurrentPositionMs());
             startPositionTracker();
@@ -759,6 +778,7 @@ public class MediaNotificationService extends Service implements Player.Listener
 
     @Override
     public void onPlaybackStateChanged(int playbackState) {
+        logDetailedDiagnostics("onPlaybackStateChanged(" + playbackState + ")", null);
         if (playbackState == Player.STATE_READY) {
             boolean playing = exoPlayer != null && exoPlayer.isPlaying();
             updatePlaybackState(playing ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED, getCurrentPositionMs());
@@ -771,6 +791,22 @@ public class MediaNotificationService extends Service implements Player.Listener
                 eventListener.onPlaybackPosition(posSec, durSec);
             }
         } else if (playbackState == Player.STATE_ENDED) {
+            long curMs = getCurrentPositionMs();
+            long durMs = getDurationMs();
+            long expectedDurMs = (currentTrack != null && currentTrack.getDurationSec() > 0)
+                    ? currentTrack.getDurationSec() * 1000L : durMs;
+
+            // Strict check: verify that player genuinely finished, not a premature buffer underrun
+            if (expectedDurMs > 15000 && curMs < expectedDurMs - 4000) {
+                Log.w(TAG, "ExoPlayer premature STATE_ENDED ignored! (pos=" + curMs + "ms, expected=" + expectedDurMs + "ms). Trying to resume stream...");
+                if (exoPlayer != null) {
+                    exoPlayer.seekTo(curMs);
+                    exoPlayer.prepare();
+                    exoPlayer.play();
+                }
+                return;
+            }
+
             Log.d(TAG, "ExoPlayer track ended naturally: " + (currentTrack != null ? currentTrack.getTitle() : ""));
             handleTrackEnded();
         } else if (playbackState == Player.STATE_BUFFERING) {
@@ -789,6 +825,7 @@ public class MediaNotificationService extends Service implements Player.Listener
 
     @Override
     public void onPlayerError(PlaybackException error) {
+        logDetailedDiagnostics("onPlayerError", error);
         Log.e("VDMusic-ExoPlayer", "PLAYBACK ERROR: " + error.toString(), error);
         Log.e("VDMusic-ExoPlayer", "Error Code: " + error.errorCode);
         Log.e("VDMusic-ExoPlayer", "Error Message: " + error.getMessage());
@@ -809,10 +846,13 @@ public class MediaNotificationService extends Service implements Player.Listener
                 eventListener.onPlaybackStarted(currentTrack, 0, currentTrack.getDurationSec());
             }
         } else {
+            // When eventListener is active (UI is attached), notify React and let React manage the queue authoritative transition.
+            // Only trigger native playNext() if no eventListener is attached (e.g. standalone background playback without UI).
             if (eventListener != null && currentTrack != null) {
                 eventListener.onPlaybackCompleted(currentTrack);
+            } else {
+                playNext();
             }
-            playNext();
         }
     }
 

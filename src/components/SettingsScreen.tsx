@@ -399,7 +399,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 { id: '320kbps High-Res Audio', label: '320kbps High-Res', desc: 'Ultra HD Lossless Opus/AAC • Studio Quality', badge: 'Best' },
                 { id: '256kbps High Quality', label: '256kbps High Quality', desc: 'Balanced high fidelity & fast buffering', badge: 'Standard' },
                 { id: '128kbps Standard Audio', label: '128kbps Data Saver', desc: 'Low mobile data usage & ultra fast play', badge: 'Saver' },
-                { id: 'Auto (Adaptive Bitrate)', label: 'Auto (Adaptive)', desc: 'Automatically adjusts to network speed', badge: 'Adaptive' },
               ].map((opt) => {
                 const isSelected = settings.audioQuality === opt.id || (!settings.audioQuality && opt.id.includes('320'));
                 return (

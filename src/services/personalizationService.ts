@@ -2407,27 +2407,65 @@ class PersonalizationService {
     history: Track[] = [],
     favoriteIds: Set<string> = new Set()
   ): PersonalizedHomeData {
-    const active = seedTrack || this.profile.lastPlayedTrack || (history.length > 0 ? history[0] : catalog[0]);
+    const active = seedTrack || this.profile.lastPlayedTrack || (history.length > 0 ? history[0] : catalog[Math.floor(Math.random() * Math.min(catalog.length, 15))]);
     const { vibe, category } = detectVibeAndGenre(active);
 
     const allowedCatalog = deduplicateTracks(catalog).filter((t) => !this.isDisliked(t.id));
     const usedTrackKeys = new Set<string>();
     if (seedTrack) {
       usedTrackKeys.add(getSongDeduplicationKey(seedTrack));
+      if (seedTrack.id) usedTrackKeys.add(seedTrack.id);
     }
 
     const sections: DynamicHomeSection[] = [];
 
     // Helper: deduplicate & select tracks ensuring they haven't been used in previous sections
+    // AND enforcing diversity across artists and genres (max 2 songs per artist per section)
     const pickUniqueTracks = (
       candidates: Track[],
       count: number,
-      minRequired = 3
+      minRequired = 3,
+      maxPerArtist = 2
     ): Track[] => {
-      const filtered = candidates.filter((t) => !usedTrackKeys.has(getSongDeduplicationKey(t)));
-      if (filtered.length < minRequired) return [];
-      const selected = filtered.slice(0, count);
-      selected.forEach((t) => usedTrackKeys.add(getSongDeduplicationKey(t)));
+      const selected: Track[] = [];
+      const artistCounts = new Map<string, number>();
+
+      for (const track of candidates) {
+        if (selected.length >= count) break;
+        const trackKey = getSongDeduplicationKey(track);
+        const trackId = track.id;
+        if (usedTrackKeys.has(trackKey) || (trackId && usedTrackKeys.has(trackId))) {
+          continue;
+        }
+
+        const primaryArtist = extractPrimaryArtist(track.artist || '').toLowerCase();
+        const curCount = artistCounts.get(primaryArtist) || 0;
+        if (curCount >= maxPerArtist && candidates.length > count * 1.5) {
+          continue; // Ensure artist diversity
+        }
+
+        selected.push(track);
+        usedTrackKeys.add(trackKey);
+        if (trackId) usedTrackKeys.add(trackId);
+        artistCounts.set(primaryArtist, curCount + 1);
+      }
+
+      // If strict artist capping resulted in too few tracks, backfill with remaining available tracks
+      if (selected.length < minRequired) {
+        for (const track of candidates) {
+          if (selected.length >= count) break;
+          const trackKey = getSongDeduplicationKey(track);
+          const trackId = track.id;
+          if (usedTrackKeys.has(trackKey) || (trackId && usedTrackKeys.has(trackId))) {
+            continue;
+          }
+          selected.push(track);
+          usedTrackKeys.add(trackKey);
+          if (trackId) usedTrackKeys.add(trackId);
+        }
+      }
+
+      if (selected.length < minRequired) return [];
       return selected;
     };
 

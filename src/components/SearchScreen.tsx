@@ -816,82 +816,13 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
         </div>
       )}
 
-      {/* Zero State (When query is empty) - Preloaded Search Suggestions */}
+      {/* Zero State (When query is empty) */}
       {!activeQuery.trim() && (
-        <div className="flex flex-col w-full py-6 space-y-6">
-          {/* Quick Trending Searches */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <span className="material-symbols-outlined text-[18px] text-[var(--color-primary)]">trending_up</span>
-              <h3 className="text-[13px] uppercase font-bold tracking-wider text-zinc-300">Trending Searches</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { name: 'Kesariya', type: 'song', subtitle: 'Brahmāstra' },
-                { name: 'Arijit Singh', type: 'artist', subtitle: 'Artist' },
-                { name: 'Dil ke nagar', type: 'song', subtitle: 'Shikhar' },
-                { name: 'Sidhu Moosewala', type: 'artist', subtitle: 'Punjabi' },
-                { name: 'Apna Bana Le', type: 'song', subtitle: 'Bhediya' },
-                { name: 'Shreya Ghoshal', type: 'artist', subtitle: 'Artist' },
-                { name: 'Brown Munde', type: 'song', subtitle: 'AP Dhillon' },
-                { name: 'Pritam', type: 'artist', subtitle: 'Music Director' },
-                { name: 'Starboy', type: 'song', subtitle: 'The Weeknd' },
-                { name: 'Tum Hi Ho', type: 'song', subtitle: 'Aashiqui 2' },
-                { name: 'Heeriye', type: 'song', subtitle: 'Jasleen Royal' },
-                { name: 'Diljit Dosanjh', type: 'artist', subtitle: 'Punjabi Pop' }
-              ].map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => {
-                    setInputQuery(item.name);
-                    setActiveQuery(item.name);
-                    saveRecentSearch(item.name);
-                  }}
-                  className="group px-3.5 py-2 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.08] hover:border-[var(--color-primary)]/40 transition-all duration-200 cursor-pointer flex items-center gap-2 text-left"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-zinc-400 group-hover:text-[var(--color-primary)] transition-colors">
-                    {item.type === 'artist' ? 'person' : 'music_note'}
-                  </span>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-semibold text-zinc-200 group-hover:text-white transition-colors">{item.name}</span>
-                    <span className="text-[10px] text-zinc-500">{item.subtitle}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-500">
+            <span className="material-symbols-outlined text-[28px]">search</span>
           </div>
-
-          {/* Quick Moods & Vibes */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 px-1">
-              <span className="material-symbols-outlined text-[18px] text-[var(--color-primary)]">auto_awesome</span>
-              <h3 className="text-[13px] uppercase font-bold tracking-wider text-zinc-300">Explore by Vibe &amp; Genre</h3>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {[
-                { title: 'Bollywood Romance', query: 'Bollywood Romantic Songs', color: 'from-rose-500/30 to-pink-600/10' },
-                { title: 'Punjabi Hits', query: 'Punjabi Hits', color: 'from-amber-500/30 to-orange-600/10' },
-                { title: 'Lo-Fi Chill & Late Night', query: 'Lo-Fi Hindi Chill', color: 'from-purple-500/30 to-indigo-600/10' },
-                { title: 'Party & Dance Beats', query: 'Party Dance Hits', color: 'from-emerald-500/30 to-teal-600/10' }
-              ].map((mood) => (
-                <button
-                  key={mood.title}
-                  onClick={() => {
-                    setInputQuery(mood.query);
-                    setActiveQuery(mood.query);
-                    saveRecentSearch(mood.query);
-                  }}
-                  className={`p-3.5 rounded-2xl bg-gradient-to-br ${mood.color} border border-white/[0.08] hover:border-white/20 transition-all duration-300 hover:scale-[1.02] text-left cursor-pointer flex flex-col justify-between h-24`}
-                >
-                  <span className="text-[13px] font-bold text-white leading-snug">{mood.title}</span>
-                  <span className="text-[11px] text-zinc-400 flex items-center gap-1 font-medium">
-                    <span>Search</span>
-                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-[14px] text-zinc-400 font-medium">Search for songs, artists, or albums</p>
         </div>
       )}
 

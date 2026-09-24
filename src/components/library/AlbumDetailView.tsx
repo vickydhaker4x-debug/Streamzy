@@ -194,19 +194,6 @@ export const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                  {/* Download status icon button */}
-                  <button
-                    id={`album-download-track-${track.id}`}
-                    aria-label="Toggle download"
-                    title={downloaded ? 'Downloaded offline' : 'Download for offline'}
-                    onClick={() => onToggleDownload(track)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                      downloaded ? 'text-emerald-400 bg-emerald-500/10' : 'text-[#71717a] hover:text-[#e4e1e7] hover:bg-white/5'
-                    }`}
-                  >
-                    {downloaded ? <CheckCircle2 size={16} /> : <Download size={16} />}
-                  </button>
-
                   {/* Favorite button */}
                   <button
                     id={`album-fav-track-${track.id}`}

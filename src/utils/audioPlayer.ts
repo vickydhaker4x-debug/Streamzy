@@ -97,6 +97,22 @@ export class AudioEngine {
   private onTimeUpdateCallback: ((timeSec: number) => void) | null = null;
   private onEndedCallback: (() => void) | null = null;
   private onErrorCallback: ((err: string) => void) | null = null;
+  private onIsPlayingChangedCallback: ((isPlaying: boolean) => void) | null = null;
+
+  public onIsPlayingChanged(cb: (isPlaying: boolean) => void) {
+    this.onIsPlayingChangedCallback = cb;
+  }
+
+  public getIsPlaying(): boolean {
+    return this.isPlaying;
+  }
+
+  public notifyIsPlaying(playing: boolean) {
+    this.isPlaying = playing;
+    if (this.onIsPlayingChangedCallback) {
+      this.onIsPlayingChangedCallback(playing);
+    }
+  }
 
   // Native Android Playback Coordination
   private repeatMode: 'off' | 'all' | 'one' = 'all';
@@ -130,7 +146,7 @@ export class AudioEngine {
         }
       },
       onStateChanged: (playing) => {
-        this.isPlaying = playing;
+        this.notifyIsPlaying(playing);
       },
       onTrackChanged: (trackPayload) => {
         if (trackPayload) {
@@ -217,9 +233,18 @@ export class AudioEngine {
 
     // 3. playing
     audio.addEventListener('playing', () => {
+      this.notifyIsPlaying(true);
       if (this.currentMode === 'audio' || this.currentMode === 'backend') {
         console.log(`[AudioEngine] play started: ${this.currentActiveTrack?.title || 'Unknown Track'}`);
       }
+    });
+
+    audio.addEventListener('play', () => {
+      this.notifyIsPlaying(true);
+    });
+
+    audio.addEventListener('pause', () => {
+      this.notifyIsPlaying(false);
     });
 
     // 4. timeupdate
@@ -244,6 +269,12 @@ export class AudioEngine {
 
     // 6. ended
     audio.addEventListener('ended', () => {
+      this.notifyIsPlaying(false);
+      const dur = audio.duration || this.currentTrackDuration;
+      if (dur > 15 && audio.currentTime < dur - 4) {
+        console.warn(`[AudioEngine] premature ended ignored (pos=${audio.currentTime}, dur=${dur})`);
+        return;
+      }
       if (this.currentMode === 'audio' || this.currentMode === 'backend') {
         console.log(`[AudioEngine] song ended naturally: ${this.currentActiveTrack?.title}`);
         if (this.onEndedCallback) {
@@ -812,16 +843,8 @@ export class AudioEngine {
       }
     }
 
-    // 3. Skip Silence: Outro Trimming for smooth gapless auto-transition
-    if (this.skipSilence && this.currentTrackDuration > 12) {
-      if (currentTime >= this.currentTrackDuration - 2.5) {
-        this.currentTrackDuration = 0;
-        if (this.onEndedCallback) {
-          this.onEndedCallback();
-          return;
-        }
-      }
-    }
+    // 3. Keep playing naturally until the audio element genuinely ends
+    // (Outro trimming removed to prevent premature skips)
 
     // 4. Update Adaptive Bitrate buffer health metrics
     if (this.primaryAudio && (this.currentMode === 'audio' || this.currentMode === 'backend')) {

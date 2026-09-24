@@ -137,6 +137,86 @@ public class StreamResolver {
         }
     }
 
+    public static void resolveWithFallbackAsync(final String videoId, final String title, final String artist, final StreamCallback callback) {
+        final AtomicBoolean hasResolved = new AtomicBoolean(false);
+        final java.util.concurrent.atomic.AtomicInteger pendingTasks = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        List<String> allEndpoints = new ArrayList<>();
+        allEndpoints.addAll(INVIDIOUS_ENDPOINTS);
+        allEndpoints.addAll(PIPED_ENDPOINTS);
+        pendingTasks.set(allEndpoints.size());
+
+        for (final String endpoint : allEndpoints) {
+            executor.execute(() -> {
+                if (hasResolved.get()) return;
+
+                ResolvedStream stream = null;
+                if (endpoint.contains("piped")) {
+                    stream = queryPipedEndpoint(endpoint, videoId);
+                } else {
+                    stream = queryInvidiousEndpoint(endpoint, videoId);
+                }
+
+                if (stream != null && stream.url != null && !stream.url.isEmpty()) {
+                    if (hasResolved.compareAndSet(false, true)) {
+                        Log.d(TAG, "Fast parallel resolve succeeded via: " + endpoint);
+                        callback.onResolved(stream);
+                    }
+                } else {
+                    int remaining = pendingTasks.decrementAndGet();
+                    if (remaining == 0 && !hasResolved.get()) {
+                        if (title != null && !title.trim().isEmpty()) {
+                            queryItunesFallback(title, artist, callback, hasResolved);
+                        } else {
+                            callback.onError("Could not resolve stream for video: " + videoId);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private static void queryItunesFallback(String title, String artist, StreamCallback callback, AtomicBoolean hasResolved) {
+        executor.execute(() -> {
+            try {
+                String cleanTitle = title.replaceAll("\\(.*?\\)|\\[.*?\\]", "").trim();
+                String cleanArtist = artist != null ? artist.split("[,&/]")[0].trim() : "";
+                String query = java.net.URLEncoder.encode(cleanTitle + " " + cleanArtist, "UTF-8");
+                URL url = new URL("https://itunes.apple.com/search?term=" + query + "&entity=song&limit=1");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(4000);
+                conn.setReadTimeout(4000);
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+
+                if (conn.getResponseCode() == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    reader.close();
+
+                    JSONObject data = new JSONObject(sb.toString());
+                    JSONArray results = data.optJSONArray("results");
+                    if (results != null && results.length() > 0) {
+                        JSONObject item = results.getJSONObject(0);
+                        String previewUrl = item.optString("previewUrl", "");
+                        if (!previewUrl.isEmpty() && hasResolved.compareAndSet(false, true)) {
+                            Log.d(TAG, "Resolved via iTunes CDN fallback for: " + title);
+                            callback.onResolved(new ResolvedStream(previewUrl, "audio/mp4", 256000));
+                            return;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "iTunes fallback query error: " + e.getMessage());
+            }
+            if (!hasResolved.get()) {
+                callback.onError("Could not resolve stream for: " + title);
+            }
+        });
+    }
+
     private static ResolvedStream queryInvidiousEndpoint(String endpoint, String videoId) {
         try {
             URL url = new URL(endpoint + videoId);

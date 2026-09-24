@@ -550,6 +550,13 @@ export default function App() {
     audioEngine.setPreset(settings.equalizerPreset);
   }, [settings.equalizerPreset]);
 
+  // Subscribe to authoritative AudioEngine playback state changes
+  useEffect(() => {
+    audioEngine.onIsPlayingChanged((playing) => {
+      setIsPlaying(playing);
+    });
+  }, []);
+
   const handleTogglePlay = () => {
     if (!currentTrack) {
       if (tracks.length > 0) {
@@ -557,11 +564,10 @@ export default function App() {
       }
       return;
     }
-    if (isPlaying) {
-      setIsPlaying(false);
+    const realPlaying = audioEngine.getIsPlaying();
+    if (realPlaying) {
       audioEngine.pause();
     } else {
-      setIsPlaying(true);
       audioEngine.resume();
     }
   };
@@ -678,9 +684,8 @@ export default function App() {
         handleNextTrack();
       },
       (err) => {
-        console.warn(`[App] Skipping track due to error: ${err}`);
-        setVibeToast({ title: 'Playback Unavailable', vibe: 'Skipping unavailable item' });
-        handleNextTrack(true);
+        console.warn(`[App] Playback error encountered: ${err}`);
+        // Do NOT automatically skip track on temporary network/buffering hiccups
       },
       activeQ
     );
