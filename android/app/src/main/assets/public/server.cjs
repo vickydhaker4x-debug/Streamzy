@@ -3100,7 +3100,7 @@ app.use((req, res, next) => {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    service: "VD Music Ultra-Fast Audio Core",
+    service: "Streamzy Ultra-Fast Audio Core",
     version: "2.0.0",
     capabilities: [
       "Zero-Latency Playback",
@@ -3134,7 +3134,7 @@ async function startServer() {
     });
   }
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[VD Music] Core Backend Server running on http://0.0.0.0:${PORT}`);
+    console.log(`[Streamzy] Core Backend Server running on http://0.0.0.0:${PORT}`);
   });
 }
 startServer();

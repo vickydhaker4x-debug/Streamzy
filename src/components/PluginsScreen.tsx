@@ -80,7 +80,7 @@ export const PluginsScreen: React.FC<PluginsScreenProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A040C] text-[#DAEAF7] pb-36 pt-20 px-4 sm:px-6 max-w-4xl mx-auto">
+    <div className="flex flex-col w-full pb-36 px-4 sm:px-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -91,7 +91,7 @@ export const PluginsScreen: React.FC<PluginsScreenProps> = ({ onBack }) => {
               .BEX Engine
             </span>
           </div>
-          <p className="text-sm text-[#A193A5]">
+          <p className="text-sm text-zinc-400">
             Modular stream resolvers and metadata plugins powering Streamzy's ad-free music playback.
           </p>
         </div>

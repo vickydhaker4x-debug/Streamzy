@@ -377,7 +377,7 @@ export default function App() {
       setPersonalizedHome(personalizationService.generatePersonalizedHome(currentTrack, tracks, playbackHistory, favoriteTrackIds));
     });
     return unsub;
-  }, [currentTrack, tracks, playbackHistory, favoriteTrackIds]);
+  }, [currentTrack?.id, tracks, playbackHistory, favoriteTrackIds]);
 
   // Module 4: Continuous Real-Time State Syncing across Devices (SSE + Cloud Account Database)
   useEffect(() => {
@@ -627,10 +627,6 @@ export default function App() {
       : personalizationService.getInstantPersonalizedQueue(track, tracks, newHistory, activeContext);
 
     if (!keepQueue) {
-      // 4. Update personalized Home data with full history and favorites
-      const homeData = personalizationService.generatePersonalizedHome(track, tracks, newHistory, favoriteTrackIds);
-      setPersonalizedHome(homeData);
-
       // 5. Generate INSTANT dynamic Up Next queue (exact same artist/genre/vibe & context)
       setOriginalQueue(activeQ);
       if (isShuffle) {
@@ -1341,8 +1337,8 @@ export default function App() {
         onOpenSettings={() => setActiveScreen('settings')}
       />
 
-      {/* Main Content Area - calculated padding ensures top content is never hidden behind header */}
-      <main className="flex-1 w-full overflow-y-auto overflow-x-hidden pt-[calc(max(env(safe-area-inset-top,0px),36px)+64px)] pb-36">
+      {/* Main Content Area - calculated padding ensures top content naturally merges with the compact header */}
+      <main className="flex-1 w-full overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top,0px)+56px)] pb-36">
         {/* Real-time Network Offline & Encrypted Vault Ribbon */}
         <NetworkOfflineBanner onOpenDownloads={() => setActiveScreen('library')} />
 
@@ -1384,6 +1380,7 @@ export default function App() {
                   currentTrack={currentTrack}
                   isPlaying={isPlaying}
                   onSelectTrack={handleSelectTrack}
+                  onOpenVideo={setActiveVideo}
                   onPlayMix={handlePlayMix}
                   onPlayQueue={handlePlayQueue}
                   initialQuery={searchQuery}

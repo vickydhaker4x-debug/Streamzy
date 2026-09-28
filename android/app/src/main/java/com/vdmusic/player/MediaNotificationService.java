@@ -255,7 +255,7 @@ public class MediaNotificationService extends Service implements Player.Listener
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "VD Music Playback",
+                    "Streamzy Playback",
                     NotificationManager.IMPORTANCE_LOW
             );
             channel.setDescription("Shows active playback controls on lockscreen and notification bar.");
@@ -978,7 +978,7 @@ public class MediaNotificationService extends Service implements Player.Listener
     }
 
     private Notification buildNotification(boolean isPlaying) {
-        String title = (currentTrack != null) ? currentTrack.getTitle() : "VD Music";
+        String title = (currentTrack != null) ? currentTrack.getTitle() : "Streamzy";
         String artist = (currentTrack != null) ? currentTrack.getArtist() : "Playing Audio";
 
         // PendingIntent to launch the app UI
@@ -1035,7 +1035,7 @@ public class MediaNotificationService extends Service implements Player.Listener
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setContentTitle(title)
                 .setContentText(artist)
-                .setSubText("VD Music")
+                .setSubText("Streamzy")
                 .setContentIntent(pContentIntent)
                 .setDeleteIntent(pStopIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

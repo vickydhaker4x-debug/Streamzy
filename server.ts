@@ -5,6 +5,7 @@ import { quickPicksRouter } from './server/quickPicksRouter.ts';
 import { musicApiRouter } from './server/musicApiRouter.ts';
 import { syncRouter } from './server/syncRouter.ts';
 import { authRouter } from './server/authRouter.ts';
+import { youtubeSearchRouter } from './server/youtubeSearchRouter.ts';
 import { telemetryRouter } from './server/telemetryRouter.ts';
 import { infrastructureRouter } from './server/infrastructureRouter.ts';
 import { createServer as createViteServer } from 'vite';
@@ -36,7 +37,7 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'VD Music Ultra-Fast Audio Core',
+    service: 'Streamzy Ultra-Fast Audio Core',
     version: '2.0.0',
     capabilities: [
       'Zero-Latency Playback',
@@ -60,6 +61,9 @@ app.use('/api/quick-picks', quickPicksRouter);
 
 // Mount Module 4: Continuous Real-Time State Syncing across devices API routes
 app.use('/api/sync', syncRouter);
+
+// Mount Official YouTube Music Search Engine
+app.use('/api/youtube', youtubeSearchRouter);
 
 // Mount Module 5: Secure JWT-based User Authentication & Security
 app.use('/api/auth', authRouter);
@@ -87,7 +91,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[VD Music] Core Backend Server running on http://0.0.0.0:${PORT}`);
+    console.log(`[Streamzy] Core Backend Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

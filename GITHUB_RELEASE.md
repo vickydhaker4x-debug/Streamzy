@@ -1,19 +1,19 @@
-# 🎵 VD Music - v1.2.0 Release
+# 🎵 Streamzy - v1.2.0 Release
 
 <p align="center">
-  <img src="public/screenshots/banner.jpg" alt="VD Music Banner" width="100%" style="border-radius: 14px;" />
+  <img src="public/screenshots/banner.jpg" alt="Streamzy Banner" width="100%" style="border-radius: 14px;" />
 </p>
 
 ### Modern Audiophile Music Player — Ad-Free, Lightweight & Pure OLED Dark
 
-**VD Music v1.2.0** is here! This release brings the official native Android branding overhaul, fixed GitHub Actions automated APK builds with customized adaptive launcher icons, and a brand-new animated acoustic boot sequence.
+**Streamzy v1.2.0** is here! This release brings the official native Android branding overhaul, fixed GitHub Actions automated APK builds with customized adaptive launcher icons, and a brand-new animated acoustic boot sequence.
 
 ---
 
 ## 📸 App Preview & UI Showcase
 
 <p align="center">
-  <img src="public/screenshots/ui-preview.jpg" alt="VD Music UI Showcase" width="85%" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
+  <img src="public/screenshots/ui-preview.jpg" alt="Streamzy UI Showcase" width="85%" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
 </p>
 
 ---
@@ -27,7 +27,7 @@
 
 ### 2. ⚡ Cinematic Animated Boot Screen
 - **Acoustic Pulse Waves**: Dual concentric audio radar rings expand and fade around the logo on cold launch.
-- **Breathing Logo Motion**: The VD Music insignia floats with a gentle breathing scale motion and warm coral drop-shadow glow.
+- **Breathing Logo Motion**: The Streamzy insignia floats with a gentle breathing scale motion and warm coral drop-shadow glow.
 - **Live Soundwave Equalizer**: 7 dynamic audio frequency equalizer bars rhythmically oscillate beneath the logo as the audio stream engine initializes.
 - **Fluid Transition**: Smooth blur and scale-out transition from the boot screen into the Home dashboard.
 
@@ -54,10 +54,10 @@
 
 ## 📥 How to Install on Android
 
-1. Download **`VD-Music-Debug-APK`** or **`app-debug.apk`** from the **Assets** section below.
+1. Download **`Streamzy-Debug-APK`** or **`app-debug.apk`** from the **Assets** section below.
 2. Open the downloaded `.apk` file on your Android device.
 3. If prompted, allow **"Install unknown apps"** for your browser or file manager.
-4. Tap **Install** and launch **VD Music**!
+4. Tap **Install** and launch **Streamzy**!
 
 ---
 

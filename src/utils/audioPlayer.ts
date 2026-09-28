@@ -624,6 +624,29 @@ export class AudioEngine {
       return;
     }
 
+    // Check if the track already has a valid direct audioUrl or streamUrl (avoid network roundtrip)
+    const directTrackUrl = currentTrackObj.audioUrl || currentTrackObj.streamUrl || '';
+    if (
+      directTrackUrl &&
+      !directTrackUrl.includes('AudioPreview') &&
+      !directTrackUrl.includes('audio-ssl') &&
+      !directTrackUrl.includes('itunes.apple.com') &&
+      !this.failedStreamUrls.has(directTrackUrl)
+    ) {
+      console.log(`[AudioEngine] ⚡ Direct track stream URL available for "${currentTrackObj.title}"`);
+      const directRecord: CachedStreamRecord = {
+        url: directTrackUrl,
+        mimeType: 'audio/mp4',
+        obtainedAt: Date.now(),
+        expiresAt: Date.now() + 3600 * 1000,
+        isBlob: directTrackUrl.startsWith('blob:'),
+        sourceType: directTrackUrl.startsWith('blob:') ? 'blob' : 'remote'
+      };
+      this.streamUrlCache.set(currentTrackObj.id, directRecord);
+      this.attachAndPlayStream(directRecord, currentTrackObj);
+      return;
+    }
+
     // Obtain fresh stream URL
     this.resolveAndPlayFreshStream(currentTrackObj, reqId);
   }

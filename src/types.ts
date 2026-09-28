@@ -29,6 +29,7 @@ export interface Track {
   lyrics?: { time: number; text: string }[];
   videoId?: string;
   plays?: string;
+  views?: string;
   isDownloaded?: boolean;
   isSmartDownloaded?: boolean;
   playedAt?: number;

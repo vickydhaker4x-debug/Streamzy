@@ -72,7 +72,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const touchStartY = useRef<number>(0);
+  const touchStartX = useRef<number>(0);
   const isPulling = useRef<boolean>(false);
+  const isHorizontalScroll = useRef<boolean>(false);
 
   const renderTimeIcon = (iconName: string) => {
     switch (iconName) {
@@ -95,15 +97,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       playbackHistory,
       favoriteTrackIds
     );
-  }, [currentTrack, tracks, playbackHistory, favoriteTrackIds, refreshCounter]);
+  }, [currentTrack?.id, tracks, playbackHistory, favoriteTrackIds, refreshCounter]);
 
   // Active home data (prefers dynamicHomeData with real-time recalculation)
   const homeData = dynamicHomeData || externalPersonalizedData;
 
   const triggerRefresh = () => {
+    if (isRefreshing) return;
     setIsRefreshing(true);
     setRefreshSuccess(false);
 
+    // Fast non-blocking refresh that preserves existing data without blanking or flickering
     setTimeout(() => {
       setRefreshCounter((c) => c + 1);
       setIsRefreshing(false);
@@ -113,43 +117,64 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       setTimeout(() => {
         setRefreshSuccess(false);
       }, 2000);
-    }, 600);
+    }, 450);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY <= 5 && !isRefreshing) {
+    // If user touched inside any horizontal scroll area, do NOT initiate pull-to-refresh
+    const target = e.target as HTMLElement | null;
+    if (target && target.closest('.overflow-x-auto, [data-horizontal-scroll="true"]')) {
+      isPulling.current = false;
+      isHorizontalScroll.current = true;
+      return;
+    }
+
+    if (window.scrollY <= 2 && !isRefreshing) {
       touchStartY.current = e.touches[0].clientY;
+      touchStartX.current = e.touches[0].clientX;
       isPulling.current = true;
+      isHorizontalScroll.current = false;
     } else {
       isPulling.current = false;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling.current || isRefreshing) return;
+    if (!isPulling.current || isRefreshing || isHorizontalScroll.current) return;
+    
     const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
+    const currentX = e.touches[0].clientX;
+    const diffY = currentY - touchStartY.current;
+    const diffX = Math.abs(currentX - touchStartX.current);
 
-    if (diff > 0 && window.scrollY <= 5) {
-      const damping = Math.min(diff * 0.45, 90);
+    // If horizontal movement is detected, immediately cancel pull-to-refresh
+    if (diffX > 8 && diffX > diffY) {
+      isHorizontalScroll.current = true;
+      isPulling.current = false;
+      if (pullY !== 0) setPullY(0);
+      return;
+    }
+
+    // Only engage pull down if vertical swipe is dominant and user is at top of page
+    if (diffY > 15 && diffY > diffX * 1.6 && window.scrollY <= 2) {
+      const damping = Math.min((diffY - 15) * 0.35, 65);
       setPullY(damping);
-    } else {
-      setPullY(0);
+    } else if (diffY <= 0) {
+      if (pullY !== 0) setPullY(0);
     }
   };
 
   const handleTouchEnd = () => {
+    isHorizontalScroll.current = false;
     if (!isPulling.current) return;
     isPulling.current = false;
 
-    if (pullY >= 50 && !isRefreshing) {
+    if (pullY >= 45 && !isRefreshing) {
       triggerRefresh();
     } else {
       setPullY(0);
     }
   };
-
-
 
   return (
     <div
@@ -157,13 +182,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="flex flex-col w-full pb-10 space-y-7 max-w-4xl mx-auto transition-transform duration-200 relative"
+      className="flex flex-col w-full pb-10 space-y-7 max-w-4xl mx-auto relative transform-gpu"
       style={{
-        transform: pullY > 0 ? `translateY(${pullY}px)` : 'none'
+        transform: pullY > 0 ? `translate3d(0, ${pullY}px, 0)` : 'none',
+        transition: pullY === 0 ? 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)' : 'none'
       }}
     >
-      {/* Ambient Time-of-Day Glow */}
-      <div className={`absolute top-0 left-0 right-0 h-48 bg-gradient-to-b ${timeContext.ambientColor} pointer-events-none rounded-b-3xl -z-10`} />
+      {/* Ambient Time-of-Day Glow extending seamlessly behind header */}
+      <div className={`absolute -top-14 left-0 right-0 h-64 bg-gradient-to-b ${timeContext.ambientColor} pointer-events-none rounded-b-3xl -z-10`} />
 
       {/* Pull-To-Refresh Visual Indicator */}
       {(pullY > 0 || isRefreshing || refreshSuccess) && (
@@ -239,7 +265,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-1">
                   {section.tracks.map((track) => {
                     const isThisActive = currentTrack?.id === track.id;
@@ -317,7 +346,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-2">
                   {section.tracks.map((track) => (
                     <div
@@ -377,7 +409,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-2">
                   {section.tracks.map((track) => (
                     <div
@@ -439,7 +474,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 )}
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-2">
                   {section.mixes.map((mix) => (
                     <div
@@ -520,7 +558,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-2">
                   {section.tracks.map((track) => (
                     <div
@@ -589,7 +630,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-2">
                   {section.tracks.map((track) => (
                     <div
@@ -644,7 +688,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-5 min-w-max pb-2">
                   {section.artists.map((artist) => (
                     <div
@@ -701,7 +748,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
               </div>
 
-              <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+              <div 
+                data-horizontal-scroll="true" 
+                className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+              >
                 <div className="flex items-start gap-4 min-w-max pb-2">
                   {section.albums.map((album) => (
                     <div
@@ -757,7 +807,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6">
+        <div 
+          data-horizontal-scroll="true" 
+          className="w-full overflow-x-auto no-scrollbar px-4 sm:px-6 touch-pan-x overscroll-x-contain"
+        >
           <div className="flex items-start gap-4 min-w-max pb-2">
             {RECOMMENDED_MUSIC_VIDEOS.map((video) => (
               <div

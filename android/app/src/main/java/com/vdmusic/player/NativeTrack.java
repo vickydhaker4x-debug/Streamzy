@@ -23,9 +23,9 @@ public class NativeTrack implements Serializable {
 
     public NativeTrack() {
         this.id = "";
-        this.title = "VD Music";
+        this.title = "Streamzy";
         this.artist = "Unknown Artist";
-        this.album = "VD Music";
+        this.album = "Streamzy";
         this.coverUrl = "";
         this.videoId = "";
         this.audioUrl = "";
@@ -41,7 +41,7 @@ public class NativeTrack implements Serializable {
         track.id = obj.optString("id", "");
         track.title = obj.optString("title", "Unknown Title");
         track.artist = obj.optString("artist", "Unknown Artist");
-        track.album = obj.optString("album", "VD Music");
+        track.album = obj.optString("album", "Streamzy");
         track.coverUrl = obj.optString("coverUrl", "");
         track.videoId = obj.optString("videoId", "");
         track.audioUrl = obj.optString("audioUrl", "");
@@ -59,7 +59,7 @@ public class NativeTrack implements Serializable {
         track.id = obj.optString("id", "");
         track.title = obj.optString("title", "Unknown Title");
         track.artist = obj.optString("artist", "Unknown Artist");
-        track.album = obj.optString("album", "VD Music");
+        track.album = obj.optString("album", "Streamzy");
         track.coverUrl = obj.optString("coverUrl", "");
         track.videoId = obj.optString("videoId", "");
         track.audioUrl = obj.optString("audioUrl", "");

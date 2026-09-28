@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "VD Music - Audiophile Player",
-  "short_name": "VD Music",
-  "description": "An open-source, ad-free streaming music client inspired by ViMusic and OpenTune with pure OLED dark theme and hardware equalizer.",
+  "name": "Streamzy - High-Fidelity Music Streaming",
+  "short_name": "Streamzy",
+  "description": "High-fidelity music streaming client featuring modular stream plugins, offline vault caching, 10-band DSP equalizer, and real-time synchronized lyrics.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "/",
@@ -14,7 +14,7 @@
   "categories": ["music", "entertainment"],
   "icons": [
     {
-      "src": "/vd_music_logo.jpg",
+      "src": "/streamzy_logo.jpg",
       "sizes": "1024x1024",
       "type": "image/jpeg",
       "purpose": "any"

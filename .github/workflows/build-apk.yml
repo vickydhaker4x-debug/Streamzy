@@ -43,7 +43,7 @@ jobs:
       - name: Build Web Assets
         run: npm run build
 
-      - name: Setup Capacitor Android & Inject VD Music Icons
+      - name: Setup Capacitor Android & Inject Streamzy Icons
         run: |
           npx cap add android || true
           node scripts/generate-android-assets.js
@@ -59,7 +59,7 @@ jobs:
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: VD-Music-Debug-APK
+          name: Streamzy-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Copy and Commit APK to Repository

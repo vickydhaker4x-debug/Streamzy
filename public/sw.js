@@ -1,12 +1,12 @@
-// VD Music Service Worker
-const CACHE_NAME = 'vd-music-cache-v1';
+// Streamzy Service Worker
+const CACHE_NAME = 'streamzy-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/vd_music_logo.jpg'
+  '/streamzy_logo.jpg'
 ];
 
 self.addEventListener('install', (event) => {

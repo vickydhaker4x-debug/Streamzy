@@ -1685,7 +1685,7 @@ class PersonalizationService {
     const allowed = catalog.filter((t) => !this.isDisliked(t.id));
     const scored = allowed.map((t) => ({
       track: t,
-      score: this.calculateTrackAffinity(t) + Math.random() * 8
+      score: this.calculateTrackAffinity(t) + ((t.popularity || 50) * 0.1)
     }));
 
     scored.sort((a, b) => b.score - a.score);
@@ -1718,9 +1718,9 @@ class PersonalizationService {
     const unplayed = allowed.filter((t) => !this.profile.listens[t.id]);
     const pool = unplayed.length >= 8 ? unplayed : allowed;
 
-    const scored = pool.map((t) => ({
+    const scored = pool.map((t, idx) => ({
       track: t,
-      score: this.calculateTrackAffinity(t) + Math.random() * 15
+      score: this.calculateTrackAffinity(t) + ((idx % 7) * 2)
     }));
 
     scored.sort((a, b) => b.score - a.score);
@@ -1755,7 +1755,7 @@ class PersonalizationService {
 
     const scored = pool.map((t) => ({
       track: t,
-      score: this.calculateTrackAffinity(t) + (t.year === '2024' ? 30 : 0) + Math.random() * 6
+      score: this.calculateTrackAffinity(t) + (t.year === '2024' ? 30 : 0) + ((t.popularity || 50) * 0.05)
     }));
 
     scored.sort((a, b) => b.score - a.score);
@@ -1985,8 +1985,8 @@ class PersonalizationService {
           score += 15;
         }
 
-        // D. Slight jitter for fresh visual feed on reload
-        score += Math.random() * 6;
+        // D. Deterministic popularity & index balance
+        score += ((t.popularity || 50) % 7);
 
         return { track: t, score };
       });
@@ -2173,8 +2173,8 @@ class PersonalizationService {
       const popBase = this.parsePopularityScore(track.plays, track.popularity || 50);
       score += popBase * 0.15;
 
-      // Jitter to ensure fresh, dynamic non-static recommendations on repeated visits
-      score += Math.random() * 16;
+      // Deterministic affinity balance
+      score += ((track.popularity || 50) % 5);
 
       return { track, score };
     });
@@ -2407,7 +2407,7 @@ class PersonalizationService {
     history: Track[] = [],
     favoriteIds: Set<string> = new Set()
   ): PersonalizedHomeData {
-    const active = seedTrack || this.profile.lastPlayedTrack || (history.length > 0 ? history[0] : catalog[Math.floor(Math.random() * Math.min(catalog.length, 15))]);
+    const active = seedTrack || this.profile.lastPlayedTrack || (history.length > 0 ? history[0] : catalog[0]);
     const { vibe, category } = detectVibeAndGenre(active);
 
     const allowedCatalog = deduplicateTracks(catalog).filter((t) => !this.isDisliked(t.id));
@@ -2526,7 +2526,7 @@ class PersonalizationService {
         const affinity = this.calculateTrackAffinity(t);
         const pop = (t.popularity || 50) * 0.2;
         const vibeMatch = detectVibeAndGenre(t).category === category ? 15 : 0;
-        return { track: t, score: affinity + pop + vibeMatch + Math.random() * 5 };
+        return { track: t, score: affinity + pop + vibeMatch };
       });
 
     scoredRecommended.sort((a, b) => b.score - a.score);
@@ -2598,7 +2598,7 @@ class PersonalizationService {
       .filter((t) => !usedTrackKeys.has(getSongDeduplicationKey(t)))
       .map((t) => ({
         track: t,
-        score: (t.popularity || 50) + (t.plays ? 20 : 0) + Math.random() * 5
+        score: (t.popularity || 50) + (t.plays ? 20 : 0)
       }));
 
     trendingCandidates.sort((a, b) => b.score - a.score);

@@ -51,7 +51,9 @@ class HistoryService {
     }
   }
 
-  private saveToStorage() {
+  private saveTimeout: any = null;
+
+  private saveToStorage(notifyListeners = true) {
     try {
       const sanitizedHistory = this.history.map((record) => ({
         ...record,
@@ -62,7 +64,17 @@ class HistoryService {
       const tracks = this.getHistoryTracks().map((t) => sanitizeTrackForPersistence(t));
       localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(tracks));
     } catch {}
-    this.notify();
+    if (notifyListeners) {
+      this.notify();
+    }
+  }
+
+  private scheduleSave() {
+    if (this.saveTimeout) return;
+    this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null;
+      this.saveToStorage(false);
+    }, 5000);
   }
 
   private notify() {
@@ -141,7 +153,7 @@ class HistoryService {
       }
     }
 
-    this.saveToStorage();
+    this.saveToStorage(true);
   }
 
   /**
@@ -174,7 +186,8 @@ class HistoryService {
       entry.track.completionPercentage = entry.completionPercentage;
       entry.track.playbackContext = entry.context;
       
-      this.saveToStorage();
+      // Update progress in background without triggering subscriber re-renders on every second
+      this.scheduleSave();
     } else {
       this.recordPlayStart(track, activeContext);
     }
@@ -187,16 +200,22 @@ class HistoryService {
     if (!track) return;
     const totalDur = track.durationSec || playedSec || 200;
     const actualDuration = playedSec ?? totalDur;
-    this.recordPlayProgress(track, actualDuration, totalDur, context);
-
     const targetKey = getSongDeduplicationKey(track);
     const entry = this.history.find(
       (e) => getSongDeduplicationKey(e.track) === targetKey
     );
     if (entry) {
+      entry.playDurationSec = Math.max(entry.playDurationSec || 0, Math.floor(actualDuration));
       entry.completionPercentage = 100;
+      entry.track.playDurationSec = entry.playDurationSec;
       entry.track.completionPercentage = 100;
-      this.saveToStorage();
+      if (context) {
+        entry.context = context;
+        entry.track.playbackContext = context;
+      }
+      this.saveToStorage(true);
+    } else {
+      this.recordPlayStart(track, context);
     }
   }
 

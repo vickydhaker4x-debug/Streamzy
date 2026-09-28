@@ -36,11 +36,14 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header id="app-header" className="fixed top-0 w-full z-40 pt-safe liquid-glass-heavy bg-[#0A040C]/90 backdrop-blur-md border-b border-[#231327]">
-      <div className="h-16 px-4 sm:px-6 flex items-center justify-between gap-3 max-w-5xl mx-auto">
+    <header
+      id="app-header"
+      className="fixed top-0 inset-x-0 z-40 pt-[env(safe-area-inset-top,0px)] bg-black/40 backdrop-blur-xl border-none transition-colors duration-200"
+    >
+      <div className="h-14 px-4 sm:px-6 flex items-center justify-between gap-3 max-w-5xl mx-auto">
         {/* Logo and Brand Title */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-[0_0_16px_rgba(217,70,239,0.35)] shrink-0 border border-white/[0.08] flex items-center justify-center group cursor-pointer bg-black">
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/10 flex items-center justify-center bg-zinc-950 shadow-[0_0_12px_rgba(217,70,239,0.2)] group cursor-pointer">
             <img
               src="/streamzy_logo.jpg"
               alt="Streamzy"
@@ -48,13 +51,13 @@ export const Header: React.FC<HeaderProps> = ({
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-[18px] tracking-tight text-white truncate leading-tight">
-                Stream<span className="bg-gradient-to-r from-[#D946EF] via-[#A855F7] to-[#06B6D4] bg-clip-text text-transparent">zy</span>
+          <div className="flex flex-col min-w-0 justify-center">
+            <div className="flex items-center leading-none">
+              <span className="font-bold text-[15px] sm:text-[16px] tracking-tight text-white truncate">
+                Stream<span className="bg-gradient-to-r from-[#D946EF] via-[#C084FC] to-[#06B6D4] bg-clip-text text-transparent">zy</span>
               </span>
             </div>
-            <span className="text-[11px] font-medium text-[#A193A5] capitalize leading-none truncate mt-0.5">
+            <span className="text-[10px] sm:text-[10.5px] font-medium text-zinc-400 capitalize leading-none truncate mt-1">
               {getScreenTitle()}
             </span>
           </div>
@@ -67,14 +70,14 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="header-settings-btn"
               onClick={onOpenSettings}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-white/10 cursor-pointer ${
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border cursor-pointer ${
                 activeScreen === 'settings'
-                  ? 'bg-[var(--color-primary)] text-white shadow-[0_0_14px_var(--dynamic-glow,rgba(254,56,94,0.4))]'
-                  : 'bg-white/5 hover:bg-white/10 text-white/80'
+                  ? 'bg-[var(--color-primary)] text-white border-transparent shadow-[0_0_12px_var(--dynamic-glow,rgba(254,56,94,0.35))]'
+                  : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/10'
               }`}
               title="App Settings"
             >
-              <Settings size={18} />
+              <Settings size={16} />
             </button>
           )}
         </div>

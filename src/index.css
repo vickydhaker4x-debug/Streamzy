@@ -86,9 +86,9 @@
 
   /* Smooth inertia scrolling on all scrollable containers */
   main, .overflow-y-auto, .overflow-x-auto {
-    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+    overscroll-behavior-x: contain;
   }
 
   /* Smooth interactive tap targets */
@@ -118,7 +118,7 @@
   }
 
   .pt-safe {
-    padding-top: max(env(safe-area-inset-top, 0px), 36px);
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
