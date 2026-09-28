@@ -6,6 +6,7 @@ import { TrackImage } from './TrackImage';
 interface MiniPlayerProps {
   currentTrack: Track | null;
   isPlaying: boolean;
+  isBuffering?: boolean;
   currentTimeSec: number;
   onTogglePlay: () => void;
   onNextTrack: () => void;
@@ -15,6 +16,7 @@ interface MiniPlayerProps {
 export const MiniPlayer: React.FC<MiniPlayerProps> = ({
   currentTrack,
   isPlaying,
+  isBuffering = false,
   currentTimeSec,
   onTogglePlay,
   onNextTrack,
@@ -51,11 +53,17 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
                 alt={currentTrack.title}
                 className="w-full h-full object-cover" 
               />
-              {isPlaying && (
+              {isBuffering ? (
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[20px] text-white animate-spin">
+                    progress_activity
+                  </span>
+                </div>
+              ) : isPlaying ? (
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-ping"></span>
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="flex flex-col min-w-0">
@@ -64,7 +72,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
               </span>
               <div className="flex items-center gap-2 mt-0.5 min-w-0">
                 <span className="text-[12px] text-[#a1a1aa] truncate">
-                  {currentTrack.artist}
+                  {isBuffering ? 'Buffering audio...' : currentTrack.artist}
                 </span>
               </div>
             </div>
@@ -81,12 +89,18 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
               }}
               className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--color-primary)] text-[#6c0513] shadow-[0_2px_14px_rgba(248,113,113,0.4)] hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:scale-90 transition-all duration-300 cursor-pointer"
             >
-              <span 
-                className="material-symbols-outlined floating-icon text-[22px]" 
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                {isPlaying ? 'pause' : 'play_arrow'}
-              </span>
+              {isBuffering ? (
+                <span className="material-symbols-outlined text-[20px] text-[#6c0513] animate-spin">
+                  progress_activity
+                </span>
+              ) : (
+                <span 
+                  className="material-symbols-outlined floating-icon text-[22px]" 
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {isPlaying ? 'pause' : 'play_arrow'}
+                </span>
+              )}
             </button>
 
             <button 

@@ -98,6 +98,24 @@ export class AudioEngine {
   private onEndedCallback: (() => void) | null = null;
   private onErrorCallback: ((err: string) => void) | null = null;
   private onIsPlayingChangedCallback: ((isPlaying: boolean) => void) | null = null;
+  private isBuffering: boolean = false;
+  private onBufferingChangedCallback: ((buffering: boolean) => void) | null = null;
+
+  public onBufferingChanged(cb: (buffering: boolean) => void) {
+    this.onBufferingChangedCallback = cb;
+  }
+
+  public getIsBuffering(): boolean {
+    return this.isBuffering;
+  }
+
+  public notifyBuffering(buffering: boolean) {
+    if (this.isBuffering === buffering) return;
+    this.isBuffering = buffering;
+    if (this.onBufferingChangedCallback) {
+      this.onBufferingChangedCallback(buffering);
+    }
+  }
 
   public onIsPlayingChanged(cb: (isPlaying: boolean) => void) {
     this.onIsPlayingChangedCallback = cb;
@@ -109,6 +127,9 @@ export class AudioEngine {
 
   public notifyIsPlaying(playing: boolean) {
     this.isPlaying = playing;
+    if (playing) {
+      this.notifyBuffering(false);
+    }
     if (this.onIsPlayingChangedCallback) {
       this.onIsPlayingChangedCallback(playing);
     }
@@ -497,6 +518,8 @@ export class AudioEngine {
 
     const currentTrackObj = this.currentActiveTrack;
     if (!currentTrackObj) return;
+
+    this.notifyBuffering(true);
 
     // Delegate to native Android ExoPlayer MediaSession service when running on Android
     if (nativeAudioPlayerService.isNative()) {

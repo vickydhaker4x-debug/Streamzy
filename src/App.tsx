@@ -191,6 +191,7 @@ export default function App() {
   const [vibeToast, setVibeToast] = useState<{ title: string; vibe: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchSource, setSearchSource] = useState<'all' | 'youtube' | 'piped' | 'jiosaavn'>('all');
+  const [isBuffering, setIsBuffering] = useState<boolean>(false);
 
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const repeatModeRef = useRef<RepeatMode>(repeatMode);
@@ -269,10 +270,16 @@ export default function App() {
     };
   }, []);
 
-  // Listen to history updates
+  // Listen to history updates & AudioEngine buffering
   useEffect(() => {
     const unsubHistory = historyService.subscribe(() => {
       setPlaybackHistory(historyService.getHistoryTracks());
+    });
+    audioEngine.onBufferingChanged((buffering) => {
+      setIsBuffering(buffering);
+    });
+    audioEngine.onIsPlayingChanged((playing) => {
+      setIsPlaying(playing);
     });
     return () => unsubHistory();
   }, []);
@@ -1438,6 +1445,7 @@ export default function App() {
           <MiniPlayer
             currentTrack={currentTrack}
             isPlaying={isPlaying}
+            isBuffering={isBuffering}
             currentTimeSec={currentTimeSec}
             onTogglePlay={handleTogglePlay}
             onNextTrack={handleNextTrack}
@@ -1458,6 +1466,7 @@ export default function App() {
           <NowPlayingScreen
             currentTrack={currentTrack}
             isPlaying={isPlaying}
+            isBuffering={isBuffering}
             currentTimeSec={currentTimeSec}
             settings={settings}
             queue={queue}

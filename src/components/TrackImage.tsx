@@ -54,12 +54,15 @@ export const TrackImage: FC<TrackImageProps> = ({
 
   const imageSrc = getImageSource();
   const isPrecached = imageSrc ? verifiedImageCache.has(imageSrc) : false;
+  const [isLoaded, setIsLoaded] = useState<boolean>(isPrecached);
 
   useEffect(() => {
-    // Reset error state if image source changes
+    // Reset error state and loading state if image source changes
     setHasError(false);
     setRetryStage(0);
-    if (imageSrc && !verifiedImageCache.has(imageSrc)) {
+    const precached = imageSrc ? verifiedImageCache.has(imageSrc) : false;
+    setIsLoaded(precached);
+    if (imageSrc && !precached) {
       thumbnailService.preloadImageUrl(imageSrc);
     }
   }, [src, videoId, imageSrc]);
@@ -69,6 +72,7 @@ export const TrackImage: FC<TrackImageProps> = ({
       setRetryStage((prev) => prev + 1);
     } else {
       setHasError(true);
+      setIsLoaded(true);
     }
   };
 
@@ -76,6 +80,7 @@ export const TrackImage: FC<TrackImageProps> = ({
     if (imageSrc) {
       verifiedImageCache.add(imageSrc);
     }
+    setIsLoaded(true);
   };
 
   if (hasError) {
@@ -91,7 +96,16 @@ export const TrackImage: FC<TrackImageProps> = ({
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden flex items-center justify-center bg-[#18181f]">
+    <div className="relative w-full h-full overflow-hidden flex items-center justify-center bg-[#141419]">
+      {/* Sleek Shimmer Skeleton while loading non-cached images */}
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse pointer-events-none flex items-center justify-center">
+          <span className="material-symbols-outlined text-[18px] text-white/20 animate-spin">
+            progress_activity
+          </span>
+        </div>
+      )}
+
       <img
         src={imageSrc}
         alt={alt}
@@ -101,7 +115,9 @@ export const TrackImage: FC<TrackImageProps> = ({
         {...({ fetchPriority: loading === 'eager' ? 'high' : 'auto' })}
         onLoad={handleLoad}
         onError={handleError}
-        className={`w-full h-full object-cover transform scale-105 ${isPrecached ? '' : 'transition-opacity duration-150'} ${className}`}
+        className={`w-full h-full object-cover transform scale-105 transition-opacity duration-200 ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        } ${className}`}
       />
       {/* Corner Glow Effect directly on the thumbnail corners */}
       {showCornerGlow && (

@@ -13,6 +13,7 @@ import { FullscreenLyricsModal } from './FullscreenLyricsModal';
 interface NowPlayingScreenProps {
   currentTrack: Track;
   isPlaying: boolean;
+  isBuffering?: boolean;
   currentTimeSec: number;
   settings: SettingsState;
   queue?: Track[];
@@ -46,6 +47,7 @@ interface NowPlayingScreenProps {
 export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
   currentTrack,
   isPlaying,
+  isBuffering = false,
   currentTimeSec,
   settings,
   queue = [],
@@ -591,12 +593,18 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
             onClick={onTogglePlay}
             className="w-16 h-16 rounded-[22px] bg-white text-black shadow-[0_8px_32px_var(--dynamic-glow,rgba(255,255,255,0.4))] hover:scale-105 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center transition-all duration-300 cursor-pointer border border-white/20"
           >
-            <span
-              className="material-symbols-outlined floating-icon text-[34px] text-black"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              {isPlaying ? 'pause' : 'play_arrow'}
-            </span>
+            {isBuffering ? (
+              <span className="material-symbols-outlined text-[32px] text-black animate-spin">
+                progress_activity
+              </span>
+            ) : (
+              <span
+                className="material-symbols-outlined floating-icon text-[34px] text-black"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {isPlaying ? 'pause' : 'play_arrow'}
+              </span>
+            )}
           </button>
 
           {/* Next Track (Rounded squircle button) */}
