@@ -126,6 +126,10 @@ const SearchScreenComponent: React.FC<SearchScreenProps> = ({
     if (page === 1) {
       setIsSearching(true);
       setSearchError(null);
+      setSongs([]);
+      setVideos([]);
+      setArtists([]);
+      setTopResult(null);
     } else {
       setIsLoadingMore(true);
     }
@@ -457,36 +461,38 @@ const SearchScreenComponent: React.FC<SearchScreenProps> = ({
               </span>
               {isSearching && (
                 <span className="material-symbols-outlined text-[16px] text-[var(--color-primary)] animate-spin">
-                  sync
+                  progress_activity
                 </span>
               )}
             </div>
             <span>
-              {searchCategory === 'offline' ? `${displaySongs.length} local songs` : `${songs.length} tracks found`}
+              {isSearching ? '' : searchCategory === 'offline' ? `${displaySongs.length} local songs` : `${songs.length} tracks found`}
             </span>
           </div>
 
-          {/* Loading Skeletons */}
-          {isSearching && songs.length === 0 && (
-            <div className="flex flex-col gap-3 animate-pulse">
-              {/* Song List Skeletons */}
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-11 h-11 rounded-xl bg-white/10 shrink-0" />
-                    <div className="flex flex-col gap-1.5 flex-1">
-                      <div className="w-2/3 h-4 rounded bg-white/10" />
-                      <div className="w-1/3 h-3 rounded bg-white/5" />
+          {/* Streamzy Glass Shimmer Skeleton Loader */}
+          {isSearching && (
+            <div className="flex flex-col gap-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div 
+                  key={`search-skeleton-${i}`} 
+                  className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] animate-pulse"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/10 shrink-0 shadow-inner" />
+                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                      <div className={`h-4 rounded-lg bg-white/10 ${i % 2 === 0 ? 'w-3/4' : 'w-1/2'}`} />
+                      <div className={`h-3 rounded-md bg-white/5 ${i % 2 === 0 ? 'w-2/5' : 'w-1/3'}`} />
                     </div>
                   </div>
-                  <div className="w-10 h-4 rounded bg-white/10" />
+                  <div className="w-10 h-4 rounded-md bg-white/5 shrink-0" />
                 </div>
               ))}
             </div>
           )}
 
           {/* Songs List */}
-          {(searchCategory === 'all' || searchCategory === 'songs' || searchCategory === 'offline') && (
+          {!isSearching && (searchCategory === 'all' || searchCategory === 'songs' || searchCategory === 'offline') && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs uppercase font-bold tracking-wider text-zinc-400">
@@ -494,7 +500,7 @@ const SearchScreenComponent: React.FC<SearchScreenProps> = ({
                 </span>
               </div>
 
-              {displaySongs.length === 0 && !isSearching ? (
+              {displaySongs.length === 0 && !searchError ? (
                 <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-zinc-400 text-xs">
                   <span className="material-symbols-outlined text-[28px] text-zinc-500 mb-1 block">search_off</span>
                   No songs found for &quot;{activeQuery}&quot;. Try different keywords.
