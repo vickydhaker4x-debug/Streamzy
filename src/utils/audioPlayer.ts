@@ -620,60 +620,12 @@ export class AudioEngine {
       }
     }
 
-    // Check if the song was already preloaded on standby deck!
-    if (this.prebufferedTrack && this.prebufferedTrack.id === currentTrackObj.id && this.standbyAudio && this.standbyAudio.src) {
-      console.log(`[AudioEngine] ⚡ Zero-Latency Instant Switch! Playing preloaded audio for: "${currentTrackObj.title}"`);
-      const preloadedUrl = this.standbyAudio.src;
-      this.prebufferedTrack = null;
-      this.prebufferedBlobUrl = null;
-      adaptiveBitrateService.setPrebufferStatus(false);
-
-      const cachedRecord = this.streamUrlCache.get(currentTrackObj.id) || {
-        url: preloadedUrl,
-        mimeType: 'audio/mp4',
-        obtainedAt: Date.now(),
-        expiresAt: Date.now() + 3600 * 1000,
-        isBlob: false,
-        sourceType: 'remote'
-      };
-
-      this.attachAndPlayStream(cachedRecord, currentTrackObj);
+    // Official YouTube IFrame Player API for YouTube tracks
+    if (currentTrackObj.videoId && !isOffline) {
+      console.log(`[AudioEngine] Playing YouTube content via authoritative YouTube IFrame Player API for "${currentTrackObj.title}" (${currentTrackObj.videoId})`);
+      this.playYouTube(currentTrackObj.videoId);
       return;
     }
-
-    // Check Stream URL Cache (with strict expiration & blacklist checks)
-    const cachedRecord = this.streamUrlCache.get(currentTrackObj.id);
-    if (cachedRecord && !this.isStreamExpired(cachedRecord) && !this.failedStreamUrls.has(cachedRecord.url)) {
-      console.log(`[AudioEngine] stream URL validation: VALID (Cached, age: ${Date.now() - cachedRecord.obtainedAt}ms)`);
-      this.attachAndPlayStream(cachedRecord, currentTrackObj);
-      return;
-    }
-
-    // Check if the track already has a valid direct audioUrl or streamUrl (avoid network roundtrip)
-    const directTrackUrl = currentTrackObj.audioUrl || currentTrackObj.streamUrl || '';
-    if (
-      directTrackUrl &&
-      !directTrackUrl.includes('AudioPreview') &&
-      !directTrackUrl.includes('audio-ssl') &&
-      !directTrackUrl.includes('itunes.apple.com') &&
-      !this.failedStreamUrls.has(directTrackUrl)
-    ) {
-      console.log(`[AudioEngine] ⚡ Direct track stream URL available for "${currentTrackObj.title}"`);
-      const directRecord: CachedStreamRecord = {
-        url: directTrackUrl,
-        mimeType: 'audio/mp4',
-        obtainedAt: Date.now(),
-        expiresAt: Date.now() + 3600 * 1000,
-        isBlob: directTrackUrl.startsWith('blob:'),
-        sourceType: directTrackUrl.startsWith('blob:') ? 'blob' : 'remote'
-      };
-      this.streamUrlCache.set(currentTrackObj.id, directRecord);
-      this.attachAndPlayStream(directRecord, currentTrackObj);
-      return;
-    }
-
-    // Obtain fresh stream URL
-    this.resolveAndPlayFreshStream(currentTrackObj, reqId);
   }
 
   /**
@@ -1005,22 +957,21 @@ export class AudioEngine {
             }
           },
           onStateChange: (event: any) => {
-            if (event.data === 1) {
+            if (event.data === 1) { // PLAYING
+              this.notifyIsPlaying(true);
+              this.notifyBuffering(false);
               this.startYtTracker();
-            } else if (event.data === 0) {
+            } else if (event.data === 0) { // ENDED
+              this.notifyIsPlaying(false);
               this.stopYtTracker();
               if (this.onEndedCallback) {
                 this.onEndedCallback();
               }
-            } else if (event.data === 2) {
+            } else if (event.data === 2) { // PAUSED
+              this.notifyIsPlaying(false);
               this.stopYtTracker();
-              if (this.isPlaying && this.backgroundPlayback) {
-                setTimeout(() => {
-                  if (this.isPlaying && this.ytPlayer) {
-                    try { this.ytPlayer.playVideo(); } catch {}
-                  }
-                }, 50);
-              }
+            } else if (event.data === 3) { // BUFFERING
+              this.notifyBuffering(true);
             }
           },
           onError: (err: any) => {
@@ -1059,6 +1010,8 @@ export class AudioEngine {
       this.ytPlayer.loadVideoById({ videoId, startSeconds: 0 });
       this.applyVolume();
       this.ytPlayer.playVideo();
+      this.notifyIsPlaying(true);
+      this.notifyBuffering(false);
       this.startYtTracker();
     } catch (e) {
       console.warn('[AudioEngine] Error playing video in YouTube player:', e);
@@ -1095,11 +1048,17 @@ export class AudioEngine {
         try {
           const currentTime = this.ytPlayer.getCurrentTime();
           if (typeof currentTime === 'number' && !isNaN(currentTime)) {
+            if ((!this.currentTrackDuration || this.currentTrackDuration <= 0) && typeof this.ytPlayer.getDuration === 'function') {
+              const dur = this.ytPlayer.getDuration();
+              if (dur && !isNaN(dur) && dur > 0) {
+                this.currentTrackDuration = dur;
+              }
+            }
             this.handleTrackTimeCheck(currentTime);
           }
         } catch {}
       }
-    }, 400);
+    }, 250);
   }
 
   private stopYtTracker() {
