@@ -45,6 +45,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
   const [videos, setVideos] = useState<MusicVideoItem[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [topResult, setTopResult] = useState<Track | null>(null);
+  const [apiSourceInfo, setApiSourceInfo] = useState<string | null>(null);
   
   // Pagination & Loading State
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -146,6 +147,13 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
 
       if (abortController.signal.aborted) return;
 
+      if (result.status === 'error' && (!result.songs || result.songs.length === 0)) {
+        setSearchError('Could not reach YouTube search services. Please check your internet connection.');
+        return;
+      }
+
+      setApiSourceInfo(result.apiSource || null);
+
       if (page === 1) {
         setSongs(result.songs || []);
         setVideos(result.videos || []);
@@ -168,8 +176,8 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
       setHasMore(result.hasMore);
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        console.warn('[SearchScreen] YouTube search error:', err);
-        setSearchError('Could not fetch YouTube results. Please check your network connection.');
+        console.error('[SearchScreen] YouTube search critical error:', err);
+        setSearchError(`YouTube search error: ${err.message || 'Connection failed'}`);
       }
     } finally {
       setIsSearching(false);
@@ -349,11 +357,19 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
         </div>
       )}
 
-      {/* Error Message */}
+      {/* Error Message with Retry */}
       {searchError && (
-        <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-xs flex items-center gap-2.5">
-          <span className="material-symbols-outlined text-[20px] text-red-400">error</span>
-          <span>{searchError}</span>
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[22px] text-red-400 shrink-0">error</span>
+            <span>{searchError}</span>
+          </div>
+          <button
+            onClick={() => handleExecuteSearch()}
+            className="px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-white text-xs font-semibold self-start sm:self-auto cursor-pointer transition"
+          >
+            Retry Search
+          </button>
         </div>
       )}
 
@@ -450,6 +466,35 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
             </span>
           </div>
 
+          {/* Loading Skeletons */}
+          {isSearching && songs.length === 0 && (
+            <div className="flex flex-col gap-3 animate-pulse">
+              {/* Top Result Skeleton */}
+              <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 flex gap-4 items-center">
+                <div className="w-20 h-20 rounded-2xl bg-white/10 shrink-0" />
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="w-20 h-4 rounded-full bg-white/10" />
+                  <div className="w-3/4 h-5 rounded-lg bg-white/10" />
+                  <div className="w-1/2 h-3.5 rounded-lg bg-white/5" />
+                </div>
+              </div>
+
+              {/* Song List Skeletons */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-11 h-11 rounded-xl bg-white/10 shrink-0" />
+                    <div className="flex flex-col gap-1.5 flex-1">
+                      <div className="w-2/3 h-4 rounded bg-white/10" />
+                      <div className="w-1/3 h-3 rounded bg-white/5" />
+                    </div>
+                  </div>
+                  <div className="w-10 h-4 rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Top Result Card (When in 'all' or 'songs' tab) */}
           {(searchCategory === 'all' || searchCategory === 'songs') && topResult && !isSearching && (
             <div
@@ -512,15 +557,15 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
               </div>
 
               {displaySongs.length === 0 && !isSearching ? (
-                <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-zinc-500 text-xs">
-                  No songs found for &quot;{activeQuery}&quot;
+                <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-zinc-400 text-xs">
+                  <span className="material-symbols-outlined text-[28px] text-zinc-500 mb-1 block">search_off</span>
+                  No songs found for &quot;{activeQuery}&quot;. Try different keywords.
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {displaySongs.map((track) => {
                     const isThisActive = currentTrack?.id === track.id;
                     const isFav = favoriteTrackIds ? favoriteTrackIds.has(track.id) : track.isFavorite;
-                    const isDownloaded = downloadedIds.has(track.id) || offlineService.isDownloaded(track.id);
 
                     return (
                       <div

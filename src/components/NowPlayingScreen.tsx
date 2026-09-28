@@ -221,7 +221,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
   };
 
   const timerPresets = [15, 30, 45, 60, null];
-  const eqPresets = ['Bass Boost & Vocal', 'Electronic', 'Acoustic', 'Chillout', 'Flat'];
   const displayQueue = queue && queue.length > 0 ? queue : TRACKS;
 
   return (
@@ -637,59 +636,26 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
           </button>
         </div>
 
-        {/* 6. Hardware / Acoustic Output Module (Bluetooth / DAC) */}
-        <div className="w-full px-3.5 py-2.5 rounded-2xl bg-black/25 backdrop-blur-md border border-white/10 flex items-center justify-between shrink-0 mb-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
-              <span className="material-symbols-outlined text-[16px]">headphones</span>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[12px] font-semibold text-white truncate">
-                Active Audio Stream • 96kHz Lossless
-              </span>
-              <span className="text-[10px] text-white/60 truncate">
-                High-Resolution Streamzy Engine
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowMenuModal(true)}
-            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10.5px] font-bold transition-all cursor-pointer shrink-0"
-          >
-            Route
-          </button>
-        </div>
-
-        {/* 7. Bento Quick Actions (Sound Profile & Sleep Timer) */}
-        <div className="w-full grid grid-cols-2 gap-2 shrink-0 mb-2">
-          {/* Sound Profile Tile */}
-          <button
-            onClick={() => setShowMenuModal(true)}
-            className="p-2.5 rounded-2xl bg-black/20 hover:bg-black/30 backdrop-blur-md border border-white/10 flex items-center gap-2.5 text-left transition-all cursor-pointer group"
-          >
-            <div className="w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-[var(--color-primary)] shrink-0 transition-colors">
-              <span className="material-symbols-outlined text-[16px]">graphic_eq</span>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-white truncate">Profile EQ</span>
-              <span className="text-[10px] text-white/60 truncate capitalize">{settings.equalizerPreset || 'Dynamic'}</span>
-            </div>
-          </button>
-
-          {/* Sleep Timer Tile */}
+        {/* 6. Sleep Timer Quick Action */}
+        <div className="w-full shrink-0 mb-2">
           <button
             onClick={() => setShowSleepModal(true)}
-            className="p-2.5 rounded-2xl bg-black/20 hover:bg-black/30 backdrop-blur-md border border-white/10 flex items-center gap-2.5 text-left transition-all cursor-pointer group"
+            className="w-full p-2.5 rounded-2xl bg-black/20 hover:bg-black/30 backdrop-blur-md border border-white/10 flex items-center justify-between transition-all cursor-pointer group"
           >
-            <div className="w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-amber-300 shrink-0 transition-colors">
-              <span className="material-symbols-outlined text-[16px]">nightlight</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-amber-300 shrink-0 transition-colors">
+                <span className="material-symbols-outlined text-[16px]">nightlight</span>
+              </div>
+              <div className="flex flex-col min-w-0 text-left">
+                <span className="text-[11px] font-semibold text-white truncate">Sleep Timer</span>
+                <span className="text-[10px] text-white/60 truncate">
+                  {settings.sleepTimerRemaining ? `${settings.sleepTimerRemaining}m remaining` : 'Timer is off'}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[11px] font-semibold text-white truncate">Sleep Timer</span>
-              <span className="text-[10px] text-white/60 truncate">
-                {settings.sleepTimerRemaining ? `${settings.sleepTimerRemaining}m left` : 'Off'}
-              </span>
-            </div>
+            <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-lg bg-white/10 text-white/80 group-hover:text-white transition-colors">
+              {settings.sleepTimerRemaining ? `${settings.sleepTimerRemaining}m` : 'Set Timer'}
+            </span>
           </button>
         </div>
 
