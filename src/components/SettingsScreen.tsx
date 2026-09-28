@@ -18,7 +18,7 @@ interface SettingsScreenProps {
 const APP_VERSION = 'v3.0.5';
 const GITHUB_REPO = 'vickydhaker4x/VD-Music';
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+const SettingsScreenComponent: React.FC<SettingsScreenProps> = ({
   settings,
   onUpdateSettings,
   onBack,
@@ -444,3 +444,5 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     </div>
   );
 };
+
+export const SettingsScreen = React.memo(SettingsScreenComponent);

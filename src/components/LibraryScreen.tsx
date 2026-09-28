@@ -47,7 +47,7 @@ interface LibraryScreenProps {
   onToggleFavorite: (trackId: string) => void;
 }
 
-export const LibraryScreen: React.FC<LibraryScreenProps> = ({
+const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
   tracks,
   currentTrack,
   isPlaying,
@@ -194,7 +194,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
   // Switch tab safely by clearing active detail views
   const handleSwitchTab = (
-    tab: 'playlists' | 'liked' | 'albums' | 'artists' | 'subscriptions' | 'history' | 'downloads'
+    tab: 'playlists' | 'liked' | 'albums' | 'artists' | 'history'
   ) => {
     setActiveAlbumDetail(null);
     setActiveArtistDetail(null);
@@ -904,3 +904,5 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     </div>
   );
 };
+
+export const LibraryScreen = React.memo(LibraryScreenComponent);

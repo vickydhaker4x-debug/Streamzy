@@ -1397,13 +1397,14 @@ export default function App() {
     <div className={`h-screen w-full flex flex-col overflow-hidden selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] ${settings.pureBlackAmoled ? 'bg-black text-[#e4e1e7]' : 'bg-transparent text-[#e4e1e7]'}`}>
       {/* Global Transparent Glassmorphism Background */}
       {!settings.pureBlackAmoled && (
-        <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden bg-black">
+        <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden bg-black gpu-layer">
           <img 
             src={currentTrack?.coverUrl || TRACKS[0].coverUrl} 
             alt="Global Background" 
-            className="w-full h-full object-cover blur-[140px] opacity-55 scale-125 saturate-[1.6] transition-all duration-1000 ease-in-out"
+            decoding="async"
+            className="w-full h-full object-cover blur-[45px] opacity-45 scale-110 saturate-[1.4] transition-opacity duration-500 ease-out"
           />
-          <div className="absolute inset-0 bg-black/60"></div>
+          <div className="absolute inset-0 bg-black/65"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-transparent to-black/95"></div>
         </div>
       )}

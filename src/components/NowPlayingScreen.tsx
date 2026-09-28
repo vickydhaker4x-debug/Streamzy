@@ -43,7 +43,7 @@ interface NowPlayingScreenProps {
   onUpdateSettings: (newSettings: Partial<SettingsState>) => void;
 }
 
-export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
+const NowPlayingScreenComponent: React.FC<NowPlayingScreenProps> = ({
   currentTrack,
   isPlaying,
   isBuffering = false,
@@ -853,3 +853,5 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
     </motion.div>
   );
 };
+
+export const NowPlayingScreen = React.memo(NowPlayingScreenComponent);

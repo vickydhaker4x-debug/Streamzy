@@ -8,7 +8,7 @@ interface BottomNavProps {
   onSelectScreen: (screen: ActiveScreen) => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({
+const BottomNavComponent: React.FC<BottomNavProps> = ({
   activeScreen,
   onSelectScreen
 }) => {
@@ -59,3 +59,5 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     </nav>
   );
 };
+
+export const BottomNav = React.memo(BottomNavComponent);

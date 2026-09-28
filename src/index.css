@@ -142,19 +142,21 @@
 
 @layer utilities {
   .liquid-glass {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(48px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(48px) saturate(200%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+    transform: translateZ(0);
   }
   
   .liquid-glass-heavy {
-    background: rgba(14, 7, 19, 0.75) !important;
-    backdrop-filter: blur(64px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(64px) saturate(200%) !important;
+    background: rgba(14, 7, 19, 0.82) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
     border: 1px solid rgba(217, 70, 239, 0.15) !important;
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 28px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+    transform: translateZ(0);
   }
 
   .streamzy-glow {

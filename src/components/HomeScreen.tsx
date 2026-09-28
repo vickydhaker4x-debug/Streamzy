@@ -43,7 +43,7 @@ interface HomeScreenProps {
   onNavigateToSearch?: (query?: string, source?: string) => void;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({
+const HomeScreenComponent: React.FC<HomeScreenProps> = ({
   tracks,
   favoriteTrackIds,
   currentTrack,
@@ -100,7 +100,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       playbackHistory,
       favoriteTrackIds
     );
-  }, [currentTrack?.id, tracks, playbackHistory, favoriteTrackIds, refreshCounter]);
+  }, [currentTrack?.id, tracks.length, playbackHistory.length, favoriteTrackIds.size, refreshCounter]);
 
   // Active home data (prefers dynamicHomeData with real-time recalculation)
   const homeData = dynamicHomeData || externalPersonalizedData;
@@ -931,3 +931,5 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     </div>
   );
 };
+
+export const HomeScreen = React.memo(HomeScreenComponent);

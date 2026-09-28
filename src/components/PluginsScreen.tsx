@@ -6,7 +6,7 @@ interface PluginsScreenProps {
   onBack?: () => void;
 }
 
-export const PluginsScreen: React.FC<PluginsScreenProps> = ({ onBack }) => {
+const PluginsScreenComponent: React.FC<PluginsScreenProps> = ({ onBack }) => {
   const [plugins, setPlugins] = useState<BloomeePlugin[]>(() => {
     try {
       const saved = localStorage.getItem('bloomee_plugins');
@@ -323,3 +323,5 @@ export const PluginsScreen: React.FC<PluginsScreenProps> = ({ onBack }) => {
     </div>
   );
 };
+
+export const PluginsScreen = React.memo(PluginsScreenComponent);

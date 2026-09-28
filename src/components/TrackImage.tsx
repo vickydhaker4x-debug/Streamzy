@@ -1,4 +1,4 @@
-import { useState, FC, useEffect, useRef } from 'react';
+import React, { useState, FC, useEffect } from 'react';
 import { thumbnailService } from '../services/thumbnailService';
 
 // In-memory cache for fast instant rendering without network flicker
@@ -13,7 +13,7 @@ interface TrackImageProps {
   showCornerGlow?: boolean;
 }
 
-export const TrackImage: FC<TrackImageProps> = ({
+const TrackImageComponent: FC<TrackImageProps> = ({
   src,
   alt = 'Music Artwork',
   className = 'w-full h-full object-cover',
@@ -129,3 +129,5 @@ export const TrackImage: FC<TrackImageProps> = ({
     </div>
   );
 };
+
+export const TrackImage = React.memo(TrackImageComponent);

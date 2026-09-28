@@ -13,7 +13,7 @@ interface MiniPlayerProps {
   onOpenNowPlaying: () => void;
 }
 
-export const MiniPlayer: React.FC<MiniPlayerProps> = ({
+const MiniPlayerComponent: React.FC<MiniPlayerProps> = ({
   currentTrack,
   isPlaying,
   isBuffering = false,
@@ -133,3 +133,5 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
     </motion.aside>
   );
 };
+
+export const MiniPlayer = React.memo(MiniPlayerComponent);

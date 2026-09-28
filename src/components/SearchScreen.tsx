@@ -24,7 +24,7 @@ interface SearchScreenProps {
   favoriteTrackIds?: Set<string>;
 }
 
-export const SearchScreen: React.FC<SearchScreenProps> = ({
+const SearchScreenComponent: React.FC<SearchScreenProps> = ({
   currentTrack,
   isPlaying,
   onSelectTrack,
@@ -715,3 +715,5 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     </div>
   );
 };
+
+export const SearchScreen = React.memo(SearchScreenComponent);
