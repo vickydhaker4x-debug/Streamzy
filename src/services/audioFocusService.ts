@@ -6,6 +6,8 @@
  * 3. Headphone unplug / Bluetooth disconnection auto-pause (becoming noisy safeguard)
  */
 
+import { Capacitor } from '@capacitor/core';
+
 export type AudioFocusState = 'gain' | 'duck' | 'loss_transient' | 'loss';
 
 export interface AudioFocusEvent {
@@ -109,6 +111,9 @@ class AudioFocusService {
    * Smoothly dips volume to 20% and restores automatically after duration
    */
   public duckAudio(durationMs: number = 3200) {
+    if (Capacitor.isNativePlatform()) {
+      return;
+    }
     if (this.duckTimeout) {
       clearTimeout(this.duckTimeout);
       this.duckTimeout = null;

@@ -5,7 +5,6 @@ import { TRACKS } from '../data/musicData';
 import { TrackImage } from './TrackImage';
 import { extractAmbientPalette, AmbientPalette, getFallbackPalette } from '../utils/colorExtractor';
 import { lyricsService } from '../services/lyricsService';
-import { offlineService } from '../services/offlineService';
 import { personalizationService } from '../services/personalizationService';
 import { QueueDrawer } from './QueueDrawer';
 import { FullscreenLyricsModal } from './FullscreenLyricsModal';
@@ -81,16 +80,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
   const [showQueue, setShowQueue] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showSleepModal, setShowSleepModal] = useState(false);
-  const [, setOfflineTick] = useState(0);
-
-  useEffect(() => {
-    const unsub = offlineService.subscribe(() => setOfflineTick((t) => t + 1));
-    return unsub;
-  }, []);
-
-  const isDownloaded = offlineService.isDownloaded(currentTrack.id);
-  const isDownloading = offlineService.isDownloading(currentTrack.id);
-  const downloadProgress = offlineService.getDownloadProgress(currentTrack.id);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -421,16 +410,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            {/* Share Button */}
-            <button
-              id="now-playing-share-btn"
-              aria-label="Share track"
-              onClick={handleShare}
-              className="w-10 h-10 flex items-center justify-center text-white/85 hover:text-white active:scale-85 transition-all cursor-pointer floating-btn"
-            >
-              <span className="material-symbols-outlined floating-icon text-[24px]">share</span>
-            </button>
-
             {/* Dislike / Thumbs Down Button */}
             <button
               id="now-playing-dislike-btn"
@@ -477,38 +456,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
               >
                 {currentTrack.isFavorite || personalizationService.isLiked(currentTrack.id) ? 'favorite' : 'favorite'}
               </span>
-            </button>
-
-            {/* Offline Encrypted Download Button */}
-            <button
-              id="now-playing-download-btn"
-              aria-label={isDownloaded ? 'Downloaded to offline encrypted vault' : 'Download for offline playback'}
-              title={isDownloaded ? 'Downloaded & AES-256 Encrypted' : 'Download to Local Vault'}
-              onClick={() => {
-                const isNowDownloaded = offlineService.toggleDownload(currentTrack);
-                if (isNowDownloaded) {
-                  showToast('Encrypted with AES-256 & saved to offline vault');
-                } else {
-                  showToast('Removed from offline downloads');
-                }
-              }}
-              className="w-10 h-10 flex items-center justify-center text-white active:scale-85 transition-all cursor-pointer relative"
-            >
-              {isDownloading ? (
-                <span className="material-symbols-outlined text-[22px] text-amber-300 animate-spin">
-                  progress_activity
-                </span>
-              ) : isDownloaded ? (
-                <div className="flex items-center justify-center text-emerald-400">
-                  <span className="material-symbols-outlined text-[24px]">
-                    download_for_offline
-                  </span>
-                </div>
-              ) : (
-                <span className="material-symbols-outlined text-[24px] text-white/85 hover:text-white">
-                  download
-                </span>
-              )}
             </button>
           </div>
         </div>
@@ -886,51 +833,6 @@ export const NowPlayingScreen: React.FC<NowPlayingScreenProps> = ({
                 <div className="flex flex-col min-w-0">
                   <span className="text-[14px] font-semibold">Add to Queue</span>
                   <span className="text-[11px] text-white/60">Append to end of playback queue</span>
-                </div>
-              </button>
-
-              {/* Download for Offline Listening */}
-              <button
-                id="modal-download-toggle-btn"
-                onClick={() => {
-                  const nowDownloaded = offlineService.toggleDownload(currentTrack);
-                  setToastMessage(nowDownloaded ? 'Downloaded for offline playback' : 'Removed from downloads');
-                  setTimeout(() => setToastMessage(null), 2200);
-                  setShowMenuModal(false);
-                }}
-                className="flex items-center gap-3 w-full p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer text-left"
-              >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  offlineService.isDownloaded(currentTrack.id) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white'
-                }`}>
-                  <span className="material-symbols-outlined floating-icon text-[20px]">
-                    {offlineService.isDownloaded(currentTrack.id) ? 'check_circle' : 'download'}
-                  </span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[14px] font-semibold">
-                    {offlineService.isDownloaded(currentTrack.id) ? 'Downloaded Offline' : 'Download Song'}
-                  </span>
-                  <span className="text-[11px] text-white/60">
-                    {offlineService.isDownloaded(currentTrack.id) ? 'Cached locally for offline playback' : 'Save high-res audio to device storage'}
-                  </span>
-                </div>
-              </button>
-
-              {/* Share */}
-              <button
-                onClick={() => {
-                  handleShare();
-                  setShowMenuModal(false);
-                }}
-                className="flex items-center gap-3 w-full p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer text-left"
-              >
-                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white shrink-0">
-                  <span className="material-symbols-outlined floating-icon text-[20px]">share</span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[14px] font-semibold">Share Track</span>
-                  <span className="text-[11px] text-white/60">Copy song link or share with friends</span>
                 </div>
               </button>
 

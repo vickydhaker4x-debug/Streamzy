@@ -6,6 +6,7 @@
  * 3. The browser tab is hidden or backgrounded
  */
 
+import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 
 class PersistentBackgroundService {
@@ -25,11 +26,14 @@ class PersistentBackgroundService {
 
   /**
    * Initializes silent hardware keep-alive loop.
-   * Browsers (especially iOS Safari, Android Chrome, and Capacitor WebView)
-   * allow background execution as long as an active Audio element or AudioContext
+   * On Web, browsers allow background execution as long as an active Audio element
    * continues outputting to the hardware audio buffer.
+   * On Native Android/iOS, this is completely bypassed to prevent AudioFocus conflicts with ExoPlayer.
    */
   private initSilentAudioLoop() {
+    if (Capacitor.isNativePlatform()) {
+      return;
+    }
     try {
       this.silentLoopElement = new Audio();
       // 1-second ultra-low frequency silent wav base64
@@ -48,31 +52,40 @@ class PersistentBackgroundService {
     // 1. Web Page Visibility API
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        console.log('[PersistentBackground] App backgrounded - reinforcing audio session keep-alive');
-        this.reinforceSession();
+        if (!Capacitor.isNativePlatform()) {
+          console.log('[PersistentBackground] App backgrounded - reinforcing audio session keep-alive');
+          this.reinforceSession();
+        }
       } else if (document.visibilityState === 'visible') {
-        console.log('[PersistentBackground] App foregrounded - restoring wake lock');
-        this.acquireWakeLock();
+        if (!Capacitor.isNativePlatform()) {
+          console.log('[PersistentBackground] App foregrounded - restoring wake lock');
+          this.acquireWakeLock();
+        }
       }
     });
 
     // 2. Page Lifecycle (Page Freeze / Resume)
     window.addEventListener('freeze', () => {
-      this.reinforceSession();
+      if (!Capacitor.isNativePlatform()) {
+        this.reinforceSession();
+      }
     });
 
     window.addEventListener('resume', () => {
-      this.acquireWakeLock();
+      if (!Capacitor.isNativePlatform()) {
+        this.acquireWakeLock();
+      }
     });
 
     // 3. Capacitor Native Mobile App State
     try {
       CapApp.addListener('appStateChange', (state) => {
-        if (!state.isActive) {
-          console.log('[PersistentBackground] Native Android/iOS background state detected');
-          this.reinforceSession();
-        } else {
-          this.acquireWakeLock();
+        if (!Capacitor.isNativePlatform()) {
+          if (!state.isActive) {
+            this.reinforceSession();
+          } else {
+            this.acquireWakeLock();
+          }
         }
       });
     } catch {
@@ -81,10 +94,10 @@ class PersistentBackgroundService {
   }
 
   /**
-   * Reinforce audio hardware thread when entering background or screen lock
+   * Reinforce audio hardware thread when entering background or screen lock (Web only)
    */
   public reinforceSession() {
-    if (!this.isScreenOffPlaybackEnabled) return;
+    if (Capacitor.isNativePlatform() || !this.isScreenOffPlaybackEnabled) return;
 
     if (this.silentLoopElement && this.silentLoopElement.paused) {
       this.silentLoopElement.play().catch(() => {});
@@ -96,9 +109,10 @@ class PersistentBackgroundService {
   }
 
   /**
-   * Start persistent background execution when playback begins
+   * Start persistent background execution when playback begins (Web only)
    */
   public startBackgroundSession() {
+    if (Capacitor.isNativePlatform()) return;
     this.isKeepAliveRunning = true;
     this.acquireWakeLock();
     this.startAudioHardwareKeepAlive();
@@ -112,6 +126,7 @@ class PersistentBackgroundService {
    * Stop background session when user pauses or stops
    */
   public stopBackgroundSession() {
+    if (Capacitor.isNativePlatform()) return;
     this.isKeepAliveRunning = false;
     this.releaseWakeLock();
 

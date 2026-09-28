@@ -176,9 +176,8 @@ export class AudioEngine {
         }
       },
       onEnded: () => {
-        if (this.onEndedCallback) {
-          this.onEndedCallback();
-        }
+        // Native MediaNotificationService auto-advances the queue natively!
+        // Do NOT call this.onEndedCallback() here on native to prevent duplicate skipping.
       },
       onError: async (err) => {
         console.warn('[AudioEngine] Native playback error detected:', err);
@@ -573,11 +572,14 @@ export class AudioEngine {
 
       logPlaybackDiagnostics(currentTrackObj, resolvedStreamInfo, directUrl, true);
 
-      const currentIndex = Math.max(0, queue.findIndex((t) => t.id === currentTrackObj.id));
+      const fullQueue = queue.some((t) => t.id === currentTrackObj.id)
+        ? queue
+        : [currentTrackObj, ...queue];
+      const currentIndex = Math.max(0, fullQueue.findIndex((t) => t.id === currentTrackObj.id));
       await nativeAudioPlayerService.play(
         currentTrackObj,
         directUrl,
-        queue,
+        fullQueue,
         currentIndex,
         this.repeatMode,
         this.isShuffle,
@@ -1333,6 +1335,7 @@ export class AudioEngine {
       () => this.pause(),
       () => this.resume(),
       (multiplier) => {
+        if (nativeAudioPlayerService.isNative()) return;
         this.audioFocusMultiplier = multiplier;
         this.applyVolume();
       }

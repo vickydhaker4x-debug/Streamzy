@@ -18,6 +18,7 @@ import { Track, Album, MusicMix, MusicVideoItem, TimeOfDay } from '../types';
 import { RECOMMENDED_MUSIC_VIDEOS } from '../data/ytmModulesData';
 import { TrackImage } from './TrackImage';
 import { PersonalizedHomeData, personalizationService, DynamicHomeSection } from '../services/personalizationService';
+import { extractAlbums, normalizeAlbumTitle } from '../services/libraryDataService';
 import { getTimeContext } from '../utils/timeContext';
 import { realtimeSyncService } from '../services/realtimeSyncService';
 import { getSongDeduplicationKey } from '../services/musicNormalizationService';
@@ -33,6 +34,7 @@ interface HomeScreenProps {
   playbackHistory?: Track[];
   userName?: string;
   onSelectTrack: (track: Track) => void;
+  onPlayQueue?: (tracks: Track[], startIndex?: number) => void;
   onTogglePlay: () => void;
   onToggleFavorite: (trackId: string) => void;
   onOpenVideo?: (video: MusicVideoItem) => void;
@@ -50,6 +52,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   playbackHistory = [],
   userName,
   onSelectTrack,
+  onPlayQueue,
   onTogglePlay,
   onToggleFavorite,
   onOpenVideo,
@@ -792,8 +795,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div
                       key={album.id}
                       onClick={() => {
-                        const matchingTrack = tracks.find(t => t.album?.toLowerCase() === album.title.toLowerCase()) || tracks[0];
-                        if (matchingTrack) onSelectTrack(matchingTrack);
+                        const allExtracted = extractAlbums(tracks);
+                        const normTarget = normalizeAlbumTitle(album.title).toLowerCase();
+                        const matchedAlbum = allExtracted.find(a => 
+                          a.id === album.id || 
+                          a.title.toLowerCase() === album.title.toLowerCase() ||
+                          normalizeAlbumTitle(a.title).toLowerCase() === normTarget
+                        );
+                        let albTracks = matchedAlbum?.tracks || [];
+                        if (albTracks.length === 0) {
+                          albTracks = tracks.filter(t => {
+                            const tNorm = normalizeAlbumTitle(t.album || '', t.title).toLowerCase();
+                            return tNorm.includes(normTarget) || normTarget.includes(tNorm) ||
+                              (album.artist && t.artist.toLowerCase().includes(album.artist.toLowerCase()));
+                          });
+                        }
+                        if (albTracks.length > 0) {
+                          if (onPlayQueue) {
+                            onPlayQueue(albTracks, 0);
+                          } else {
+                            onSelectTrack(albTracks[0]);
+                          }
+                        } else if (tracks.length > 0) {
+                          onSelectTrack(tracks[0]);
+                        }
                       }}
                       className="flex flex-col w-36 group cursor-pointer"
                     >

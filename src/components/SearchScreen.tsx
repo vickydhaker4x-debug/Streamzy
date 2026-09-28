@@ -81,7 +81,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
         if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return ['Arijit Singh', 'The Weeknd', 'Taylor Swift', 'Diljit Dosanjh', 'Alan Walker'];
+    return [];
   });
 
   const saveRecentSearch = (term: string) => {
@@ -469,16 +469,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
           {/* Loading Skeletons */}
           {isSearching && songs.length === 0 && (
             <div className="flex flex-col gap-3 animate-pulse">
-              {/* Top Result Skeleton */}
-              <div className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 flex gap-4 items-center">
-                <div className="w-20 h-20 rounded-2xl bg-white/10 shrink-0" />
-                <div className="flex flex-col gap-2 flex-1">
-                  <div className="w-20 h-4 rounded-full bg-white/10" />
-                  <div className="w-3/4 h-5 rounded-lg bg-white/10" />
-                  <div className="w-1/2 h-3.5 rounded-lg bg-white/5" />
-                </div>
-              </div>
-
               {/* Song List Skeletons */}
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5">
@@ -492,58 +482,6 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                   <div className="w-10 h-4 rounded bg-white/10" />
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Top Result Card (When in 'all' or 'songs' tab) */}
-          {(searchCategory === 'all' || searchCategory === 'songs') && topResult && !isSearching && (
-            <div
-              onClick={() => handleTrackClick(topResult)}
-              className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer group hover:border-[var(--color-primary)]/50 transition-all duration-200"
-            >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 bg-black border border-white/10 shadow-md">
-                  <TrackImage
-                    src={topResult.coverUrl}
-                    videoId={topResult.videoId}
-                    alt={topResult.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center shadow-lg">
-                      <span className="material-symbols-outlined text-[24px]">play_arrow</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-wider border border-[var(--color-primary)]/30">
-                      Top Result
-                    </span>
-                    <span className="text-[11px] text-zinc-400 font-mono">
-                      {topResult.duration}
-                    </span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-[var(--color-primary)] transition-colors truncate">
-                    {topResult.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-zinc-400 truncate mt-0.5">
-                    {topResult.artist} • YouTube Music
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTrackClick(topResult);
-                }}
-                className="self-end sm:self-center px-4 py-2 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-                <span>Play Now</span>
-              </button>
             </div>
           )}
 

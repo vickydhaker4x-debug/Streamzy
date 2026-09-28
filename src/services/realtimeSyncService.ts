@@ -122,9 +122,14 @@ class RealtimeSyncService {
 
   private getStoredUserId(): string {
     try {
-      return localStorage.getItem('vd_sync_user_id') || 'default_user';
+      let id = localStorage.getItem('vd_sync_user_id');
+      if (!id || id === 'default_user') {
+        id = 'usr_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+        localStorage.setItem('vd_sync_user_id', id);
+      }
+      return id;
     } catch {
-      return 'default_user';
+      return 'usr_anon_' + Date.now().toString(36);
     }
   }
 

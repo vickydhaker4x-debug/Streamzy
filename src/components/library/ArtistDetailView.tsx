@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowLeft, BellRing, UserPlus, Play, Shuffle, CheckCircle2, Download, Heart } from 'lucide-react';
+import { ArrowLeft, Play, Shuffle, CheckCircle2, Download, Heart } from 'lucide-react';
 import { Track } from '../../types';
 import { EnrichedArtist, EnrichedAlbum, extractArtists, extractAlbums } from '../../services/libraryDataService';
 import { TrackImage } from '../TrackImage';
@@ -11,12 +11,10 @@ interface ArtistDetailViewProps {
   artist: EnrichedArtist;
   currentTrack: Track | null;
   isPlaying: boolean;
-  isSubscribed: boolean;
   onBack: () => void;
   onSelectTrack: (track: Track) => void;
   onPlayArtistTracks: (tracks: Track[], startIndex?: number) => void;
   onToggleFavorite: (trackId: string) => void;
-  onToggleSubscription: (artistName: string) => void;
   onSelectAlbum: (album: EnrichedAlbum) => void;
   onToggleDownload: (track: Track) => void;
   isDownloaded: (trackId: string) => boolean;
@@ -27,12 +25,10 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
   artist,
   currentTrack,
   isPlaying,
-  isSubscribed,
   onBack,
   onSelectTrack,
   onPlayArtistTracks,
   onToggleFavorite,
-  onToggleSubscription,
   onSelectAlbum,
   onToggleDownload,
   isDownloaded,
@@ -113,7 +109,7 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
             {artist.name}
           </h1>
           <p className="text-[13px] text-[#a1a1aa] mt-1">
-            {artist.subscribers || '1.8M monthly listeners'} • {artist.tracks.length} tracks
+            {artist.monthlyListeners || '1.8M monthly listeners'} • {artist.tracks.length} tracks
           </p>
 
           <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 flex-wrap">
@@ -128,21 +124,8 @@ export const ArtistDetailView: React.FC<ArtistDetailViewProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: Subscribe, Play Radio, Smart Shuffle */}
+        {/* Action Buttons: Play Radio, Smart Shuffle */}
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap justify-center">
-          <button
-            id={`artist-subscribe-toggle-${artist.name}`}
-            onClick={() => onToggleSubscription(artist.name)}
-            className={`px-4 py-2 rounded-full text-[13px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95 ${
-              isSubscribed
-                ? 'bg-white/[0.12] text-[#e4e1e7] border border-white/20 hover:bg-white/[0.18]'
-                : 'bg-[var(--color-primary)] text-[#670211] hover:brightness-110'
-            }`}
-          >
-            {isSubscribed ? <BellRing size={16} /> : <UserPlus size={16} />}
-            {isSubscribed ? 'Subscribed' : 'Subscribe'}
-          </button>
-
           {artist.tracks.length > 0 && (
             <>
               <button

@@ -24,13 +24,11 @@ import { sanitizeTrackForPersistence } from '../services/musicNormalizationServi
 import { TrackImage } from './TrackImage';
 import { extractAlbums, extractArtists, EnrichedAlbum, EnrichedArtist } from '../services/libraryDataService';
 import { offlineService } from '../services/offlineService';
-import { subscriptionService } from '../services/subscriptionService';
 import { AlbumDetailView } from './library/AlbumDetailView';
 import { ArtistDetailView } from './library/ArtistDetailView';
 import { LikedSongsView } from './library/LikedSongsView';
 import { HistorySection } from './library/HistorySection';
 import { OfflineDownloadsSection } from './library/OfflineDownloadsSection';
-import { SubscriptionsSection } from './library/SubscriptionsSection';
 import { realtimeSyncService } from '../services/realtimeSyncService';
 
 interface LibraryScreenProps {
@@ -39,6 +37,8 @@ interface LibraryScreenProps {
   isPlaying: boolean;
   settings: SettingsState;
   playbackHistory: Track[];
+  initialAlbum?: EnrichedAlbum | null;
+  onClearInitialAlbum?: () => void;
   onClearHistory: () => void;
   onRemoveFromHistory: (trackId: string) => void;
   onSelectTrack: (track: Track) => void;
@@ -53,6 +53,8 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   isPlaying,
   settings: _settings,
   playbackHistory,
+  initialAlbum,
+  onClearInitialAlbum,
   onClearHistory,
   onRemoveFromHistory,
   onSelectTrack,
@@ -60,27 +62,35 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
   onTogglePlay: _onTogglePlay,
   onToggleFavorite
 }) => {
-  // Navigation Tabs: playlists, liked, albums, artists, subscriptions, history
+  // Navigation Tabs: playlists, liked, albums, artists, history
   const [activeTab, setActiveTab] = useState<
-    'playlists' | 'liked' | 'albums' | 'artists' | 'subscriptions' | 'history'
+    'playlists' | 'liked' | 'albums' | 'artists' | 'history'
   >('playlists');
 
-  // Subscriptions & Downloads live update tick
+  // Downloads live update tick
   const [, setServiceTick] = useState(0);
 
   useEffect(() => {
-    const unsubSub = subscriptionService.subscribeListener(() => setServiceTick((t) => t + 1));
     const unsubOff = offlineService.subscribe(() => setServiceTick((t) => t + 1));
     return () => {
-      unsubSub();
       unsubOff();
     };
   }, []);
 
   // Detailed subviews
-  const [activeAlbumDetail, setActiveAlbumDetail] = useState<EnrichedAlbum | null>(null);
+  const [activeAlbumDetail, setActiveAlbumDetail] = useState<EnrichedAlbum | null>(initialAlbum || null);
   const [activeArtistDetail, setActiveArtistDetail] = useState<EnrichedArtist | null>(null);
   const [activePlaylistDetail, setActivePlaylistDetail] = useState<Playlist | null>(null);
+
+  // Sync initialAlbum if passed from parent
+  useEffect(() => {
+    if (initialAlbum) {
+      setActiveAlbumDetail(initialAlbum);
+      setActiveArtistDetail(null);
+      setActivePlaylistDetail(null);
+      setActiveTab('albums');
+    }
+  }, [initialAlbum]);
 
   // Playlists persistence
   const [playlists, setPlaylists] = useState<Playlist[]>(() => {
@@ -283,7 +293,6 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     { id: 'liked', label: 'Liked Songs', Icon: Heart, badge: likedTracks.length },
     { id: 'albums', label: 'Albums', Icon: Disc3, badge: albums.length },
     { id: 'artists', label: 'Artists', Icon: User, badge: artists.length },
-    { id: 'subscriptions', label: 'Subscriptions', Icon: Bell, badge: subscriptionService.getAllSubscribed().length },
     { id: 'history', label: 'History & Activity', Icon: History, badge: playbackHistory.length }
   ] as const;
 
@@ -350,15 +359,10 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
           artist={activeArtistDetail}
           currentTrack={currentTrack}
           isPlaying={isPlaying}
-          isSubscribed={subscriptionService.isSubscribed(activeArtistDetail.name)}
           onBack={() => setActiveArtistDetail(null)}
           onSelectTrack={onSelectTrack}
           onPlayArtistTracks={handlePlayQueueInternal}
           onToggleFavorite={onToggleFavorite}
-          onToggleSubscription={(name) => {
-            subscriptionService.toggleSubscription(name);
-            setServiceTick((t) => t + 1);
-          }}
           onSelectAlbum={(alb) => setActiveAlbumDetail(alb)}
           onToggleDownload={handleToggleDownload}
           isDownloaded={isDownloaded}
@@ -570,8 +574,6 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
             {artists.map((artist) => {
-              const isSub = subscriptionService.isSubscribed(artist.name);
-
               return (
                 <div
                   key={artist.id}
@@ -595,38 +597,11 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                   <span className="text-[11px] text-[#a1a1aa] mt-0.5">
                     {artist.trackCount} tracks • {artist.albumCount} {artist.albumCount === 1 ? 'album' : 'albums'}
                   </span>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      subscriptionService.toggleSubscription(artist.name);
-                      setServiceTick((t) => t + 1);
-                    }}
-                    className={`mt-3 px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                      isSub
-                        ? 'bg-white/10 text-[#e4e1e7] border border-white/20'
-                        : 'bg-[var(--color-primary)] text-[#670211]'
-                    }`}
-                  >
-                    {isSub ? 'Subscribed' : 'Subscribe'}
-                  </button>
                 </div>
               );
             })}
           </div>
         </div>
-      ) : activeTab === 'subscriptions' ? (
-        /* 7. Subscriptions Section */
-        <SubscriptionsSection
-          artists={artists}
-          currentTrack={currentTrack}
-          isPlaying={isPlaying}
-          onSelectArtist={(artist) => setActiveArtistDetail(artist)}
-          onSelectTrack={onSelectTrack}
-          onToggleFavorite={onToggleFavorite}
-          onToggleDownload={handleToggleDownload}
-          isDownloaded={isDownloaded}
-        />
       ) : activeTab === 'history' ? (
         /* 8. History & Recent Activity Section */
         <HistorySection

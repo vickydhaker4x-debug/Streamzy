@@ -22,7 +22,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 
 // server.ts
-var import_express8 = __toESM(require("express"), 1);
+var import_express9 = __toESM(require("express"), 1);
 var import_path3 = __toESM(require("path"), 1);
 
 // server/streamRouter.ts
@@ -2977,9 +2977,215 @@ authRouter.post("/logout", async (req, res) => {
   }
 });
 
-// server/telemetryRouter.ts
+// server/youtubeSearchRouter.ts
 var import_express6 = require("express");
-var telemetryRouter = (0, import_express6.Router)();
+var import_yt_search = __toESM(require("yt-search"), 1);
+var youtubeSearchRouter = (0, import_express6.Router)();
+var searchCache = /* @__PURE__ */ new Map();
+var CACHE_TTL_MS = 10 * 60 * 1e3;
+function parseIsoDuration(isoDuration) {
+  if (!isoDuration) return { formatted: "3:30", seconds: 210 };
+  const matches = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!matches) return { formatted: "3:30", seconds: 210 };
+  const hours = parseInt(matches[1] || "0", 10);
+  const minutes = parseInt(matches[2] || "0", 10);
+  const seconds = parseInt(matches[3] || "0", 10);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+  if (hours > 0) {
+    return {
+      formatted: `${hours}:${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`,
+      seconds: totalSeconds
+    };
+  }
+  return {
+    formatted: `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`,
+    seconds: totalSeconds
+  };
+}
+function cleanTitle(rawTitle) {
+  if (!rawTitle) return "Untitled Track";
+  return rawTitle.replace(/\[\s*(Official\s*(Music\s*)?Video|Official\s*Audio|Lyric\s*Video|HD|4K|Audio)\s*\]/gi, "").replace(/\(\s*(Official\s*(Music\s*)?Video|Official\s*Audio|Lyric\s*Video|HD|4K|Audio)\s*\)/gi, "").replace(/\s+/g, " ").trim();
+}
+function formatViews(views) {
+  if (!views || isNaN(views)) return "YouTube Music";
+  if (views >= 1e9) return `${(views / 1e9).toFixed(1)}B views`;
+  if (views >= 1e6) return `${(views / 1e6).toFixed(1)}M views`;
+  if (views >= 1e3) return `${(views / 1e3).toFixed(1)}K views`;
+  return `${views} views`;
+}
+function cleanArtistName(rawArtist, title) {
+  if (!rawArtist) {
+    if (title && title.includes("-")) {
+      return title.split("-")[0].trim();
+    }
+    return "YouTube Artist";
+  }
+  return rawArtist.replace(/\s*-\s*Topic$/i, "").trim();
+}
+youtubeSearchRouter.get("/search", async (req, res) => {
+  try {
+    const query = (req.query.q || "").trim();
+    const page = parseInt(req.query.page || "1", 10);
+    const limit = Math.min(parseInt(req.query.limit || "20", 10), 50);
+    const category = req.query.category || "all";
+    if (!query) {
+      return res.json({
+        status: "ok",
+        query: "",
+        page: 1,
+        hasMore: false,
+        topResult: null,
+        songs: [],
+        videos: [],
+        artists: [],
+        albums: [],
+        totalCount: 0
+      });
+    }
+    const cacheKey = `yt_search:${query.toLowerCase()}:${category}:${page}:${limit}`;
+    const cached = searchCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached.data);
+    }
+    const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
+    let items = [];
+    let nextPageToken = void 0;
+    if (apiKey) {
+      try {
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&videoEmbeddable=true&maxResults=${limit}&q=${encodeURIComponent(
+          query + " music"
+        )}&key=${apiKey}${req.query.pageToken ? `&pageToken=${req.query.pageToken}` : ""}`;
+        const ytRes = await fetch(searchUrl);
+        if (ytRes.ok) {
+          const ytData = await ytRes.json();
+          nextPageToken = ytData.nextPageToken;
+          const videoIds = (ytData.items || []).map((item) => item.id?.videoId).filter(Boolean).join(",");
+          if (videoIds) {
+            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet,statistics&id=${videoIds}&key=${apiKey}`;
+            const detailsRes = await fetch(detailsUrl);
+            if (detailsRes.ok) {
+              const detailsData = await detailsRes.json();
+              items = (detailsData.items || []).map((v) => {
+                const parsedDuration = parseIsoDuration(v.contentDetails?.duration);
+                return {
+                  videoId: v.id,
+                  title: cleanTitle(v.snippet?.title || ""),
+                  artist: cleanArtistName(v.snippet?.channelTitle, v.snippet?.title),
+                  album: "YouTube Music",
+                  duration: parsedDuration.formatted,
+                  durationSec: parsedDuration.seconds,
+                  thumbnail: v.snippet?.thumbnails?.high?.url || v.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`,
+                  views: formatViews(parseInt(v.statistics?.viewCount || "0", 10)),
+                  publishedAt: v.snippet?.publishedAt
+                };
+              });
+            }
+          }
+        }
+      } catch (apiErr) {
+        console.warn("[YouTubeSearch] Official Data API error, using yt-search fallback:", apiErr);
+      }
+    }
+    if (items.length === 0) {
+      const searchResult = await (0, import_yt_search.default)({ query: `${query} song` });
+      const rawVideos = searchResult.videos || [];
+      const isMixQuery = query.toLowerCase().includes("mix") || query.toLowerCase().includes("jukebox") || query.toLowerCase().includes("compilation");
+      const filtered = rawVideos.filter((v) => {
+        if (!v.videoId || !v.title) return false;
+        if (!isMixQuery && v.seconds > 1200) return false;
+        return v.seconds >= 20;
+      });
+      const startIndex = (page - 1) * limit;
+      const paginatedVideos = filtered.slice(startIndex, startIndex + limit);
+      items = paginatedVideos.map((v) => {
+        return {
+          videoId: v.videoId,
+          title: cleanTitle(v.title),
+          artist: cleanArtistName(v.author?.name, v.title),
+          album: "YouTube Music",
+          duration: v.timestamp || "3:30",
+          durationSec: v.seconds || 210,
+          thumbnail: v.thumbnail || v.image || `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+          views: formatViews(v.views),
+          ago: v.ago
+        };
+      });
+      if (filtered.length > startIndex + limit) {
+        nextPageToken = `page_${page + 1}`;
+      }
+    }
+    const allTracks = items.map((item) => ({
+      id: `yt-${item.videoId}`,
+      videoId: item.videoId,
+      title: item.title,
+      artist: item.artist,
+      album: item.album || "YouTube Music",
+      duration: item.duration,
+      durationSec: item.durationSec,
+      coverUrl: item.thumbnail,
+      quality: "YouTube Music (Official Player)",
+      views: item.views,
+      source: "youtube",
+      isFavorite: false
+    }));
+    let topResult = null;
+    if (allTracks.length > 0 && page === 1) {
+      const first = allTracks[0];
+      topResult = {
+        type: "song",
+        item: first
+      };
+    }
+    const artistNames = Array.from(new Set(allTracks.map((t) => t.artist))).slice(0, 4);
+    const artists = artistNames.map((name, idx) => {
+      const sampleTrack = allTracks.find((t) => t.artist === name);
+      return {
+        id: `yt-art-${idx}-${name.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+        name,
+        avatarUrl: sampleTrack?.coverUrl || "/streamzy_logo.jpg",
+        tracks: allTracks.filter((t) => t.artist === name),
+        trackCount: allTracks.filter((t) => t.artist === name).length,
+        albumCount: 1
+      };
+    });
+    const videos = allTracks.map((t) => ({
+      id: t.videoId,
+      videoId: t.videoId,
+      title: t.title,
+      artist: t.artist,
+      thumbnailUrl: t.coverUrl,
+      views: t.views || "YouTube Music",
+      duration: t.duration
+    }));
+    const responsePayload = {
+      status: "ok",
+      query,
+      page,
+      hasMore: Boolean(nextPageToken),
+      nextPageToken,
+      topResult,
+      songs: allTracks,
+      videos,
+      artists,
+      albums: [],
+      totalCount: allTracks.length
+    };
+    searchCache.set(cacheKey, {
+      data: responsePayload,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    });
+    res.setHeader("X-Cache", "MISS");
+    res.json(responsePayload);
+  } catch (err) {
+    console.error("[YouTubeSearch] Search route error:", err);
+    res.status(500).json({ error: "YouTube Search Failed", details: err?.message });
+  }
+});
+
+// server/telemetryRouter.ts
+var import_express7 = require("express");
+var telemetryRouter = (0, import_express7.Router)();
 telemetryRouter.post("/event", optionalAuth, async (req, res) => {
   try {
     const body = req.body;
@@ -3040,8 +3246,8 @@ telemetryRouter.get("/track/:trackId", (req, res) => {
 });
 
 // server/infrastructureRouter.ts
-var import_express7 = require("express");
-var infrastructureRouter = (0, import_express7.Router)();
+var import_express8 = require("express");
+var infrastructureRouter = (0, import_express8.Router)();
 infrastructureRouter.get("/overview", async (req, res) => {
   try {
     const dbStats = db.getStats();
@@ -3082,10 +3288,10 @@ infrastructureRouter.post("/cache/flush", async (req, res) => {
 // server.ts
 var import_vite = require("vite");
 var appDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
-var app = (0, import_express8.default)();
+var app = (0, import_express9.default)();
 var PORT = 3e3;
-app.use(import_express8.default.json({ limit: "10mb" }));
-app.use(import_express8.default.urlencoded({ extended: true }));
+app.use(import_express9.default.json({ limit: "10mb" }));
+app.use(import_express9.default.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD");
@@ -3116,6 +3322,7 @@ app.use("/api", musicApiRouter);
 app.use("/api/stream", streamRouter);
 app.use("/api/quick-picks", quickPicksRouter);
 app.use("/api/sync", syncRouter);
+app.use("/api/youtube", youtubeSearchRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/telemetry", telemetryRouter);
 app.use("/api/infrastructure", infrastructureRouter);
@@ -3128,7 +3335,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = import_path3.default.join(process.cwd(), "dist");
-    app.use(import_express8.default.static(distPath));
+    app.use(import_express9.default.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(import_path3.default.join(distPath, "index.html"));
     });

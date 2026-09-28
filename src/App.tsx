@@ -214,6 +214,12 @@ export default function App() {
   const currentTrackRef = useRef<Track | null>(currentTrack);
   currentTrackRef.current = currentTrack;
 
+  const queueRef = useRef<Track[]>(queue);
+  queueRef.current = queue;
+
+  const tracksRef = useRef<Track[]>(tracks);
+  tracksRef.current = tracks;
+
   // Real-time synchronization with native media player & ExoPlayer bridge
   useEffect(() => {
     const unsubNative = nativeAudioPlayerService.registerHandler({
@@ -233,6 +239,37 @@ export default function App() {
         if (trackPayload) {
           setCurrentTimeSec(0);
           setIsPlaying(true);
+          const activeQueue = queueRef.current;
+          const allTracks = tracksRef.current;
+          const matched = activeQueue.find(t => t.id === trackPayload.id) ||
+                          allTracks.find(t => t.id === trackPayload.id) ||
+                          ({
+                            id: trackPayload.id,
+                            title: trackPayload.title,
+                            artist: trackPayload.artist,
+                            album: trackPayload.album,
+                            coverUrl: trackPayload.coverUrl,
+                            durationSec: trackPayload.durationSec,
+                            videoId: trackPayload.videoId,
+                            audioUrl: trackPayload.audioUrl,
+                            streamUrl: trackPayload.streamUrl,
+                            isFavorite: trackPayload.isFavorite
+                          } as Track);
+          if (currentTrackRef.current && currentTrackRef.current.id !== matched.id) {
+            setPastQueue(prev => [...prev.filter(t => t.id !== currentTrackRef.current!.id), currentTrackRef.current!].slice(-50));
+          }
+          setCurrentTrack(matched);
+          telemetryClient.onTrackStart(matched.id, matched.title, matched.durationSec);
+          historyService.recordPlayProgress(matched, 0, matched.durationSec, playbackContextRef.current);
+        }
+      },
+      onEnded: () => {
+        // Native MediaNotificationService auto-advances the queue natively!
+        // Record telemetry and completion history, but DO NOT call handleNextTrack() here to avoid duplicate skips.
+        if (currentTrackRef.current) {
+          telemetryClient.onTrackEnded();
+          personalizationService.recordPlayCompleted(currentTrackRef.current, currentTrackRef.current.durationSec || 200);
+          historyService.recordPlayCompleted(currentTrackRef.current, currentTrackRef.current.durationSec || 200, playbackContextRef.current);
         }
       }
     });
@@ -248,6 +285,31 @@ export default function App() {
             }
             if (typeof state.positionSec === 'number') {
               setCurrentTimeSec(Math.floor(state.positionSec));
+            }
+            if (state.currentTrack) {
+              const currentId = currentTrackRef.current?.id;
+              if (currentId !== state.currentTrack.id) {
+                const activeQueue = queueRef.current;
+                const allTracks = tracksRef.current;
+                const matched = activeQueue.find(t => t.id === state.currentTrack!.id) ||
+                                allTracks.find(t => t.id === state.currentTrack!.id) ||
+                                ({
+                                  id: state.currentTrack.id,
+                                  title: state.currentTrack.title,
+                                  artist: state.currentTrack.artist,
+                                  album: state.currentTrack.album,
+                                  coverUrl: state.currentTrack.coverUrl,
+                                  durationSec: state.currentTrack.durationSec,
+                                  videoId: state.currentTrack.videoId,
+                                  audioUrl: state.currentTrack.audioUrl,
+                                  streamUrl: state.currentTrack.streamUrl,
+                                  isFavorite: state.currentTrack.isFavorite
+                                } as Track);
+                if (currentTrackRef.current) {
+                  setPastQueue(prev => [...prev.filter(t => t.id !== currentTrackRef.current!.id), currentTrackRef.current!].slice(-50));
+                }
+                setCurrentTrack(matched);
+              }
             }
           }
         } catch {}
@@ -269,6 +331,15 @@ export default function App() {
       window.removeEventListener('focus', syncPlaybackFromNative);
     };
   }, []);
+
+  // Synchronize active queue and playback mode with native Android service
+  useEffect(() => {
+    if (nativeAudioPlayerService.isNative() && currentTrack) {
+      const fullQueue = queue.some(t => t.id === currentTrack.id) ? queue : [currentTrack, ...queue];
+      const currentIndex = Math.max(0, fullQueue.findIndex(t => t.id === currentTrack.id));
+      nativeAudioPlayerService.setQueue(fullQueue, currentIndex, repeatMode, isShuffle);
+    }
+  }, [queue, currentTrack?.id, repeatMode, isShuffle]);
 
   // Listen to history updates & AudioEngine buffering
   useEffect(() => {
@@ -1373,6 +1444,7 @@ export default function App() {
                   onToggleFavorite={handleToggleFavorite}
                   onOpenVideo={setActiveVideo}
                   onPlayMix={handlePlayMix}
+                  onPlayQueue={handlePlayQueue}
                   onOpenColdStart={() => setIsOnboardingOpen(true)}
                   onNavigateToSearch={(query, source) => {
                     if (query !== undefined) setSearchQuery(query);

@@ -12,6 +12,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
+import android.media.AudioManager;
+import android.media.AudioFocusRequest;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -72,6 +74,9 @@ public class MediaNotificationService extends Service implements Player.Listener
     private NotificationManager notificationManager;
     private PowerManager.WakeLock wakeLock;
     private WifiManager.WifiLock wifiLock;
+    private AudioManager audioManager;
+    private AudioFocusRequest audioFocusRequest;
+    private boolean wasPlayingBeforeLoss = false;
 
     // Queue and State Management
     private final List<NativeTrack> queue = new ArrayList<>();
@@ -135,6 +140,7 @@ public class MediaNotificationService extends Service implements Player.Listener
         createNotificationChannel();
 
         initLocks();
+        initAudioFocus();
         initExoPlayer();
         initMediaSession();
     }
@@ -153,6 +159,102 @@ public class MediaNotificationService extends Service implements Player.Listener
             }
         } catch (Exception e) {
             Log.w(TAG, "Error acquiring wake/wifi locks: " + e.getMessage());
+        }
+    }
+
+    private void initAudioFocus() {
+        try {
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        } catch (Exception e) {
+            Log.w(TAG, "initAudioFocus failed: " + e.getMessage());
+        }
+    }
+
+    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            Log.d(TAG, "Audio focus changed: " + focusChange);
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    // Regained focus - preserve full volume and resume if interrupted
+                    if (exoPlayer != null) {
+                        exoPlayer.setVolume(1.0f);
+                    }
+                    if (wasPlayingBeforeLoss) {
+                        wasPlayingBeforeLoss = false;
+                        resumePlayback();
+                    }
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    // Permanent loss (another player started playing)
+                    wasPlayingBeforeLoss = false;
+                    pausePlayback();
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    // Temporary loss (phone call, alarm)
+                    if (isPlaying()) {
+                        wasPlayingBeforeLoss = true;
+                        pausePlayback();
+                    }
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    // CRITICAL: DO NOT DUCK! As requested:
+                    // "When Streamzy is minimized/backgrounded, song volume must NOT automatically decrease.
+                    // Do not call volume-down, setVolume(), or audio ducking when app goes to background.
+                    // Preserve the user's actual system/player volume."
+                    if (exoPlayer != null) {
+                        exoPlayer.setVolume(1.0f);
+                    }
+                    break;
+            }
+        }
+    };
+
+    private void requestAudioFocus() {
+        if (audioManager == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (audioFocusRequest == null) {
+                    android.media.AudioAttributes playbackAttributes = new android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build();
+
+                    audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                            .setAudioAttributes(playbackAttributes)
+                            .setAcceptsDelayedFocusGain(true)
+                            .setWillPauseWhenDucked(false) // Never duck!
+                            .setOnAudioFocusChangeListener(audioFocusChangeListener, playerHandler)
+                            .build();
+                }
+                audioManager.requestAudioFocus(audioFocusRequest);
+            } else {
+                audioManager.requestAudioFocus(
+                        audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN
+                );
+            }
+            if (exoPlayer != null) {
+                exoPlayer.setVolume(1.0f);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "requestAudioFocus failed: " + e.getMessage());
+        }
+    }
+
+    private void abandonAudioFocus() {
+        if (audioManager == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (audioFocusRequest != null) {
+                    audioManager.abandonAudioFocusRequest(audioFocusRequest);
+                }
+            } else {
+                audioManager.abandonAudioFocus(audioFocusChangeListener);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "abandonAudioFocus failed: " + e.getMessage());
         }
     }
 
@@ -199,11 +301,12 @@ public class MediaNotificationService extends Service implements Player.Listener
 
         exoPlayer = new ExoPlayer.Builder(this)
                 .setMediaSourceFactory(mediaSourceFactory)
-                .setAudioAttributes(audioAttributes, true) // AudioFocus handled automatically!
+                .setAudioAttributes(audioAttributes, false) // We handle AudioFocus explicitly so volume NEVER ducks!
                 .setWakeMode(C.WAKE_MODE_NETWORK)
                 .setHandleAudioBecomingNoisy(true) // Pauses automatically when headphones disconnected!
                 .build();
 
+        exoPlayer.setVolume(1.0f);
         exoPlayer.addListener(this);
     }
 
@@ -421,12 +524,14 @@ public class MediaNotificationService extends Service implements Player.Listener
         runOnPlayerThread(() -> {
             try {
                 acquireWakeLocks();
+                requestAudioFocus();
 
                 Log.d(TAG, "[VDMUSIC_MEDIA] newMediaItem=true generation=" + generation + " mimeType=" + mimeType);
 
                 // Fully reset the previous decoder/source before attaching a new stream.
                 // This avoids a bad decoder state surviving a restart/re-selection.
                 if (exoPlayer != null) {
+                    exoPlayer.setVolume(1.0f); // Always preserve 100% full volume
                     exoPlayer.pause();
                     exoPlayer.stop();
                     exoPlayer.clearMediaItems();
@@ -485,6 +590,8 @@ public class MediaNotificationService extends Service implements Player.Listener
         runOnPlayerThread(() -> {
             if (exoPlayer != null) {
                 acquireWakeLocks();
+                requestAudioFocus();
+                exoPlayer.setVolume(1.0f);
                 exoPlayer.play();
                 updatePlaybackState(PlaybackStateCompat.STATE_PLAYING, getCurrentPositionMs());
                 startForegroundWithNotification(true);
@@ -506,6 +613,7 @@ public class MediaNotificationService extends Service implements Player.Listener
                 exoPlayer.clearMediaItems();
             }
             releaseWakeLocks();
+            abandonAudioFocus();
             updatePlaybackState(PlaybackStateCompat.STATE_STOPPED, 0);
 
             if (isForegroundRunning) {
@@ -534,37 +642,48 @@ public class MediaNotificationService extends Service implements Player.Listener
     }
 
     public void playNext() {
-        if (queue.isEmpty()) return;
+        runOnPlayerThread(() -> {
+            if (queue == null || queue.isEmpty()) {
+                Log.d(TAG, "playNext: queue is empty, stopping");
+                stopPlayback();
+                return;
+            }
 
-        if (currentIndex + 1 < queue.size()) {
-            currentIndex++;
-            playTrackAtIndex(currentIndex);
-        } else if ("all".equalsIgnoreCase(repeatMode)) {
-            currentIndex = 0;
-            playTrackAtIndex(currentIndex);
-        } else {
-            stopPlayback();
-        }
+            Log.d(TAG, "playNext: currentIndex=" + currentIndex + " / queueSize=" + queue.size() + " / repeatMode=" + repeatMode);
+
+            if (currentIndex + 1 < queue.size()) {
+                currentIndex++;
+                playTrackAtIndex(currentIndex);
+            } else if ("all".equalsIgnoreCase(repeatMode)) {
+                currentIndex = 0;
+                playTrackAtIndex(currentIndex);
+            } else {
+                Log.d(TAG, "playNext: reached end of queue and repeatMode is " + repeatMode + ", stopping");
+                stopPlayback();
+            }
+        });
     }
 
     public void playPrevious() {
-        if (queue.isEmpty()) return;
+        runOnPlayerThread(() -> {
+            if (queue == null || queue.isEmpty()) return;
 
-        // If played more than 3 seconds, replay current track
-        if (getCurrentPositionMs() > 3000) {
-            seekTo(0);
-            return;
-        }
+            // If played more than 3 seconds, replay current track
+            if (getCurrentPositionMs() > 3000) {
+                seekTo(0);
+                return;
+            }
 
-        if (currentIndex - 1 >= 0) {
-            currentIndex--;
-            playTrackAtIndex(currentIndex);
-        } else if ("all".equalsIgnoreCase(repeatMode)) {
-            currentIndex = queue.size() - 1;
-            playTrackAtIndex(currentIndex);
-        } else {
-            seekTo(0);
-        }
+            if (currentIndex - 1 >= 0) {
+                currentIndex--;
+                playTrackAtIndex(currentIndex);
+            } else if ("all".equalsIgnoreCase(repeatMode)) {
+                currentIndex = queue.size() - 1;
+                playTrackAtIndex(currentIndex);
+            } else {
+                seekTo(0);
+            }
+        });
     }
 
     private void playTrackAtIndex(int index) {
@@ -808,10 +927,12 @@ public class MediaNotificationService extends Service implements Player.Listener
                     ? currentTrack.getDurationSec() * 1000L : durMs;
 
             boolean isAtGenuineEnd = (durMs > 0 && curMs >= durMs - 2000) ||
-                                     (expectedDurMs > 0 && curMs >= expectedDurMs - 4000);
+                                     (expectedDurMs > 0 && curMs >= expectedDurMs - 4000) ||
+                                     (durMs <= 0 && expectedDurMs <= 0 && curMs > 10000);
 
-            if (!isAtGenuineEnd && curMs < 10000 && expectedDurMs > 30000) {
-                // Buffer drop or network glitch within first 10s of a long track: attempt quick recovery
+            if (!isAtGenuineEnd && expectedDurMs > 20000 && curMs < expectedDurMs - 5000) {
+                // Buffer drop or network glitch before genuine end: do NOT trigger next!
+                // Attempt quick recovery/resume from current position
                 Log.w(TAG, "ExoPlayer premature stream drop at " + curMs + "ms (expected " + expectedDurMs + "ms). Attempting resume...");
                 if (exoPlayer != null) {
                     exoPlayer.seekTo(curMs);
@@ -821,7 +942,7 @@ public class MediaNotificationService extends Service implements Player.Listener
                 return;
             }
 
-            Log.d(TAG, "ExoPlayer track ended naturally: " + (currentTrack != null ? currentTrack.getTitle() : ""));
+            Log.d(TAG, "ExoPlayer track reached genuine end: " + (currentTrack != null ? currentTrack.getTitle() : ""));
             handleTrackEnded();
         } else if (playbackState == Player.STATE_BUFFERING) {
             updatePlaybackState(PlaybackStateCompat.STATE_BUFFERING, getCurrentPositionMs());
@@ -853,6 +974,9 @@ public class MediaNotificationService extends Service implements Player.Listener
     }
 
     private void handleTrackEnded() {
+        Log.i(TAG, "handleTrackEnded: " + (currentTrack != null ? currentTrack.getTitle() : "null")
+                + " | repeatMode=" + repeatMode + " | currentIndex=" + currentIndex + " | queueSize=" + queue.size());
+
         if ("one".equalsIgnoreCase(repeatMode)) {
             seekTo(0);
             resumePlayback();
@@ -860,13 +984,13 @@ public class MediaNotificationService extends Service implements Player.Listener
                 eventListener.onPlaybackStarted(currentTrack, 0, currentTrack.getDurationSec());
             }
         } else {
-            // When eventListener is active (UI is attached), notify React and let React manage the queue authoritative transition.
-            // Only trigger native playNext() if no eventListener is attached (e.g. standalone background playback without UI).
+            // First notify eventListener (so React/Capacitor logs telemetry and play completed)
             if (eventListener != null && currentTrack != null) {
                 eventListener.onPlaybackCompleted(currentTrack);
-            } else {
-                playNext();
             }
+            // CRITICAL: Automatically advance to next queue item natively!
+            // This ensures uninterrupted auto-next playback whether the app is foregrounded, backgrounded, or screen locked!
+            playNext();
         }
     }
 
@@ -1103,6 +1227,7 @@ public class MediaNotificationService extends Service implements Player.Listener
 
         stopPositionTracker();
         releaseWakeLocks();
+        abandonAudioFocus();
 
         if (exoPlayer != null) {
             exoPlayer.removeListener(this);
