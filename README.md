@@ -160,8 +160,9 @@ Unnecessary network requests and repeated refreshes are minimized to keep naviga
 ---
 
 ***||DOWNLOAD NOW||
+LATEST:-
 
-https://github.com/vickydhaker4x-debug/Streamzy/releases/tag/V1.0
+https://github.com/vickydhaker4x-debug/Streamzy/releases/tag/V1.1
 
 ## 🎯 Project Goals
 
