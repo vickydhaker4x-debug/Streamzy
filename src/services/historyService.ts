@@ -16,6 +16,15 @@ class HistoryService {
 
   constructor() {
     this.loadFromStorage();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => this.saveToStorage(false));
+      window.addEventListener('pagehide', () => this.saveToStorage(false));
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          this.saveToStorage(false);
+        }
+      });
+    }
   }
 
   private loadFromStorage() {

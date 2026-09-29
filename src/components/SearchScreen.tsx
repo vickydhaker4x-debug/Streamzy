@@ -189,6 +189,16 @@ const SearchScreenComponent: React.FC<SearchScreenProps> = ({
     }
   }, []);
 
+  const prevInitialQueryRef = useRef<string | undefined>(initialQuery);
+  useEffect(() => {
+    if (initialQuery !== undefined && initialQuery !== prevInitialQueryRef.current) {
+      prevInitialQueryRef.current = initialQuery;
+      if (initialQuery.trim() !== inputQuery.trim()) {
+        setInputQuery(initialQuery);
+      }
+    }
+  }, [initialQuery]);
+
   // Debounced input search trigger (350ms debounce)
   useEffect(() => {
     const trimmed = inputQuery.trim();

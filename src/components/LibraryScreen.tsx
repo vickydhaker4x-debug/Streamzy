@@ -30,6 +30,7 @@ import { LikedSongsView } from './library/LikedSongsView';
 import { HistorySection } from './library/HistorySection';
 import { OfflineDownloadsSection } from './library/OfflineDownloadsSection';
 import { realtimeSyncService } from '../services/realtimeSyncService';
+import { userLibraryStorage, SavedAlbumRecord, SavedArtistRecord } from '../services/userLibraryStorage';
 
 interface LibraryScreenProps {
   tracks: Track[];
@@ -68,7 +69,7 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
   >('playlists');
 
   // Downloads live update tick
-  const [, setServiceTick] = useState(0);
+  const [serviceTick, setServiceTick] = useState(0);
 
   useEffect(() => {
     const unsubOff = offlineService.subscribe(() => setServiceTick((t) => t + 1));
@@ -92,46 +93,29 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
     }
   }, [initialAlbum]);
 
-  // Playlists persistence
-  const [playlists, setPlaylists] = useState<Playlist[]>(() => {
-    try {
-      const saved = localStorage.getItem('vd_user_playlists');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Ensure every playlist has a safe 'tracks' array
-          return parsed.map((p: any) => ({
-            ...p,
-            tracks: Array.isArray(p.tracks) ? p.tracks : []
-          }));
-        }
-      }
-    } catch {}
-    return [];
-  });
+  // Persistent Playlists, Saved Albums, and Saved Artists state
+  const [playlists, setPlaylists] = useState<Playlist[]>(() => userLibraryStorage.getPlaylists());
+  const [savedAlbums, setSavedAlbums] = useState<SavedAlbumRecord[]>(() => userLibraryStorage.getSavedAlbums());
+  const [savedArtists, setSavedArtists] = useState<SavedArtistRecord[]>(() => userLibraryStorage.getSavedArtists());
+
+  // Subscribe to userLibraryStorage changes so state updates instantly across the app
+  useEffect(() => {
+    const unsub = userLibraryStorage.subscribe(() => {
+      setPlaylists(userLibraryStorage.getPlaylists());
+      setSavedAlbums(userLibraryStorage.getSavedAlbums());
+      setSavedArtists(userLibraryStorage.getSavedArtists());
+    });
+    return unsub;
+  }, []);
 
   // Module 4: Synchronize Playlists with Cloud Database in Real-Time
   useEffect(() => {
     realtimeSyncService.fetchAccountState().then((acc) => {
       if (acc?.playlists && Array.isArray(acc.playlists) && acc.playlists.length > 0) {
-        setPlaylists((prev) => {
-          const map = new Map<string, Playlist>();
-          acc.playlists.forEach((p: any) => {
-            map.set(p.id, { ...p, tracks: Array.isArray(p.tracks) ? p.tracks : [] });
-          });
-          prev.forEach((p) => {
-            map.set(p.id, { ...p, tracks: Array.isArray(p.tracks) ? p.tracks : [] });
-          });
-          const merged = Array.from(map.values());
-          try {
-            const sanitizedMerged = merged.map(pl => ({
-              ...pl,
-              tracks: pl.tracks.map(t => sanitizeTrackForPersistence(t))
-            }));
-            localStorage.setItem('vd_user_playlists', JSON.stringify(sanitizedMerged));
-          } catch {}
-          return merged;
+        acc.playlists.forEach((p: any) => {
+          userLibraryStorage.savePlaylist({ ...p, tracks: Array.isArray(p.tracks) ? p.tracks : [] });
         });
+        setPlaylists(userLibraryStorage.getPlaylists());
       }
     });
 
@@ -141,18 +125,8 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
           ...data.playlist,
           tracks: Array.isArray(data.playlist.tracks) ? data.playlist.tracks : []
         };
-        setPlaylists((prev) => {
-          const filtered = prev.filter((p) => p.id !== safePlaylist.id);
-          const updated = [safePlaylist, ...filtered];
-          try {
-            const sanitizedUpdated = updated.map(pl => ({
-              ...pl,
-              tracks: pl.tracks.map(t => sanitizeTrackForPersistence(t))
-            }));
-            localStorage.setItem('vd_user_playlists', JSON.stringify(sanitizedUpdated));
-          } catch {}
-          return updated;
-        });
+        userLibraryStorage.savePlaylist(safePlaylist);
+        setPlaylists(userLibraryStorage.getPlaylists());
       }
     });
 
@@ -166,12 +140,82 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
   const [isAddSongsModalOpen, setIsAddSongsModalOpen] = useState(false);
   const [songSearchQuery, setSongSearchQuery] = useState('');
 
-  // Extract liked songs
-  const likedTracks = useMemo(() => tracks.filter((t) => t.isFavorite), [tracks]);
+  // Extract liked songs from both persistent store and state tracks
+  const likedTracks = useMemo(() => {
+    const persistentLiked = userLibraryStorage.getLikedTracks();
+    const stateLiked = tracks.filter((t) => t.isFavorite);
+    const map = new Map<string, Track>();
+    persistentLiked.forEach((t) => map.set(t.id, t));
+    stateLiked.forEach((t) => map.set(t.id, t));
+    return Array.from(map.values());
+  }, [tracks, serviceTick]);
 
-  // Extract albums and artists from all library tracks
-  const albums = useMemo(() => extractAlbums(tracks), [tracks]);
-  const artists = useMemo(() => extractArtists(tracks, albums), [tracks, albums]);
+  // Extract albums and artists from all library tracks & persistent saved items
+  const derivedAlbums = useMemo(() => extractAlbums(tracks), [tracks]);
+  const derivedArtists = useMemo(() => extractArtists(tracks, derivedAlbums), [tracks, derivedAlbums]);
+
+  const albums = useMemo(() => {
+    const map = new Map<string, EnrichedAlbum>();
+    derivedAlbums.forEach((a) => map.set(a.id, a));
+    savedAlbums.forEach((sa) => {
+      if (!map.has(sa.id)) {
+        map.set(sa.id, {
+          id: sa.id,
+          title: sa.title,
+          artist: sa.artist,
+          year: sa.year || '2024',
+          coverUrl: sa.coverUrl,
+          trackCount: 1,
+          tracks: [],
+          totalSec: 210,
+          totalDuration: '3:30'
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [derivedAlbums, savedAlbums]);
+
+  const artists = useMemo(() => {
+    const map = new Map<string, EnrichedArtist>();
+    derivedArtists.forEach((ar) => map.set(ar.id, ar));
+    savedArtists.forEach((sa) => {
+      if (!map.has(sa.id)) {
+        map.set(sa.id, {
+          id: sa.id,
+          name: sa.name,
+          avatarUrl: sa.avatarUrl,
+          trackCount: 1,
+          albumCount: 1,
+          genres: [],
+          tracks: [],
+          albums: []
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [derivedArtists, savedArtists]);
+
+  const handleToggleSaveAlbum = (album: EnrichedAlbum, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    userLibraryStorage.toggleSaveAlbum({
+      id: album.id,
+      title: album.title,
+      artist: album.artist,
+      year: album.year,
+      coverUrl: album.coverUrl
+    });
+    setSavedAlbums(userLibraryStorage.getSavedAlbums());
+  };
+
+  const handleToggleSaveArtist = (artist: EnrichedArtist, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    userLibraryStorage.toggleSaveArtist({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.avatarUrl
+    });
+    setSavedArtists(userLibraryStorage.getSavedArtists());
+  };
 
   // Fallback play queue handler if not passed by parent
   const handlePlayQueueInternal = (trackList: Track[], startIndex = 0) => {
@@ -216,17 +260,8 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
       tracks: []
     };
 
-    const updated = [newPl, ...playlists];
-    setPlaylists(updated);
-    try {
-      const sanitizedUpdated = updated.map(pl => ({
-        ...pl,
-        tracks: pl.tracks.map(t => sanitizeTrackForPersistence(t))
-      }));
-      localStorage.setItem('vd_user_playlists', JSON.stringify(sanitizedUpdated));
-    } catch {}
-
-    // Module 4: Sync playlist to cloud account database in real-time
+    userLibraryStorage.savePlaylist(newPl);
+    setPlaylists(userLibraryStorage.getPlaylists());
     realtimeSyncService.syncPlaylist(newPl);
 
     setNewPlaylistName('');
@@ -238,17 +273,8 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
   // Delete playlist
   const handleDeletePlaylist = (playlistId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const updated = playlists.filter((p) => p.id !== playlistId);
-    setPlaylists(updated);
-    try {
-      const sanitizedUpdated = updated.map(pl => ({
-        ...pl,
-        tracks: pl.tracks.map(t => sanitizeTrackForPersistence(t))
-      }));
-      localStorage.setItem('vd_user_playlists', JSON.stringify(sanitizedUpdated));
-    } catch {}
-
-    // Module 4: Sync playlist deletion
+    userLibraryStorage.deletePlaylist(playlistId);
+    setPlaylists(userLibraryStorage.getPlaylists());
     realtimeSyncService.syncDeletePlaylist(playlistId);
 
     if (activePlaylistDetail?.id === playlistId) {
@@ -272,18 +298,8 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
     };
 
     setActivePlaylistDetail(updatedPlaylist);
-
-    const updatedList = playlists.map((p) => (p.id === playlistId ? updatedPlaylist : p));
-    setPlaylists(updatedList);
-    try {
-      const sanitizedList = updatedList.map(pl => ({
-        ...pl,
-        tracks: pl.tracks.map(t => sanitizeTrackForPersistence(t))
-      }));
-      localStorage.setItem('vd_user_playlists', JSON.stringify(sanitizedList));
-    } catch {}
-
-    // Module 4: Sync playlist update
+    userLibraryStorage.savePlaylist(updatedPlaylist);
+    setPlaylists(userLibraryStorage.getPlaylists());
     realtimeSyncService.syncPlaylist(updatedPlaylist);
   };
 
@@ -535,32 +551,46 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-            {albums.map((alb) => (
-              <div
-                key={alb.id}
-                id={`album-card-${alb.id}`}
-                onClick={() => setActiveAlbumDetail(alb)}
-                className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-3 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col"
-              >
-                <div className="w-full aspect-square rounded-xl overflow-hidden mb-2.5 liquid-glass-heavy shadow-md">
-                  <TrackImage
-                    src={alb.coverUrl}
-                    videoId={alb.tracks[0]?.videoId}
-                    alt={alb.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+            {albums.map((alb) => {
+              const isSaved = userLibraryStorage.isAlbumSaved(alb.id);
+              return (
+                <div
+                  key={alb.id}
+                  id={`album-card-${alb.id}`}
+                  onClick={() => setActiveAlbumDetail(alb)}
+                  className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-3 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col relative"
+                >
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-2.5 liquid-glass-heavy shadow-md">
+                    <TrackImage
+                      src={alb.coverUrl}
+                      videoId={alb.tracks[0]?.videoId}
+                      alt={alb.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <button
+                      onClick={(e) => handleToggleSaveAlbum(alb, e)}
+                      title={isSaved ? 'Remove from Saved Albums' : 'Save Album'}
+                      className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
+                        isSaved ? 'bg-[var(--color-primary)] text-white shadow-md' : 'bg-black/40 text-white/70 hover:text-white'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[15px]">
+                        {isSaved ? 'bookmark' : 'bookmark_border'}
+                      </span>
+                    </button>
+                  </div>
+                  <h3 className="font-bold text-[13px] text-[#e4e1e7] truncate group-hover:text-[var(--color-primary)] transition-colors">
+                    {alb.title}
+                  </h3>
+                  <span className="text-[12px] text-[#a1a1aa] truncate mt-0.5">{alb.artist}</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#71717a] mt-1">
+                    <span>{alb.year}</span>
+                    <span>•</span>
+                    <span>{alb.trackCount} {alb.trackCount === 1 ? 'song' : 'songs'}</span>
+                  </div>
                 </div>
-                <h3 className="font-bold text-[13px] text-[#e4e1e7] truncate group-hover:text-[var(--color-primary)] transition-colors">
-                  {alb.title}
-                </h3>
-                <span className="text-[12px] text-[#a1a1aa] truncate mt-0.5">{alb.artist}</span>
-                <div className="flex items-center gap-1.5 text-[11px] text-[#71717a] mt-1">
-                  <span>{alb.year}</span>
-                  <span>•</span>
-                  <span>{alb.trackCount} {alb.trackCount === 1 ? 'song' : 'songs'}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : activeTab === 'artists' ? (
@@ -574,20 +604,32 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
             {artists.map((artist) => {
+              const isSaved = userLibraryStorage.isArtistSaved(artist.id);
               return (
                 <div
                   key={artist.id}
                   id={`artist-card-${artist.id}`}
                   onClick={() => setActiveArtistDetail(artist)}
-                  className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-4 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col items-center text-center"
+                  className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-4 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col items-center text-center relative"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 liquid-glass-heavy shadow-md ring-2 ring-white/10 group-hover:ring-[var(--color-primary)] transition-all">
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 liquid-glass-heavy shadow-md ring-2 ring-white/10 group-hover:ring-[var(--color-primary)] transition-all">
                     <TrackImage
                       src={artist.avatarUrl}
                       videoId={artist.tracks[0]?.videoId}
                       alt={artist.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
+                    <button
+                      onClick={(e) => handleToggleSaveArtist(artist, e)}
+                      title={isSaved ? 'Unfollow Artist' : 'Follow Artist'}
+                      className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
+                        isSaved ? 'bg-[var(--color-primary)] text-white shadow-md' : 'bg-black/60 text-white/70 hover:text-white'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[13px]">
+                        {isSaved ? 'check' : 'add'}
+                      </span>
+                    </button>
                   </div>
 
                   <h3 className="font-bold text-[14px] text-[#e4e1e7] truncate w-full group-hover:text-[var(--color-primary)] transition-colors">

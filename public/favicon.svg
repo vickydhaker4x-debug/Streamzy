@@ -1,0 +1,22 @@
+
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark Squircle Background -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="#141318"/>
+  <rect x="24" y="24" width="464" height="464" rx="112" stroke="#25242F" stroke-width="8"/>
+  
+  <!-- Symmetrical Modern Waveform Bars -->
+  <!-- 1. Left Outer Bar -->
+  <rect x="116" y="216" width="36" height="80" rx="18" fill="#FE385E"/>
+  
+  <!-- 2. Left Inner Bar -->
+  <rect x="178" y="156" width="36" height="200" rx="18" fill="#FE385E"/>
+  
+  <!-- 3. Center White Master Bar -->
+  <rect x="238" y="106" width="36" height="300" rx="18" fill="#FFFFFF"/>
+  
+  <!-- 4. Right Inner Bar -->
+  <rect x="298" y="156" width="36" height="200" rx="18" fill="#FE385E"/>
+  
+  <!-- 5. Right Outer Bar -->
+  <rect x="360" y="216" width="36" height="80" rx="18" fill="#FE385E"/>
+</svg>

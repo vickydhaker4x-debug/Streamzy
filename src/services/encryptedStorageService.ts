@@ -612,7 +612,7 @@ class EncryptedStorageService {
         duration: '3:50',
         durationSec: 230,
         coverUrl: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop',
-        isFavorite: true,
+        isFavorite: false,
         quality: '320kbps High-Res Audio'
       },
       {
@@ -623,7 +623,7 @@ class EncryptedStorageService {
         duration: '3:20',
         durationSec: 200,
         coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop',
-        isFavorite: true,
+        isFavorite: false,
         quality: '320kbps High-Res Audio'
       },
       {
@@ -634,7 +634,7 @@ class EncryptedStorageService {
         duration: '4:28',
         durationSec: 268,
         coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop',
-        isFavorite: true,
+        isFavorite: false,
         quality: '320kbps High-Res Audio'
       }
     ];

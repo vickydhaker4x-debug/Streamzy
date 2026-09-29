@@ -14,13 +14,13 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { NetworkOfflineBanner } from "./components/NetworkOfflineBanner";
 
 
-const HomeScreen = lazy(() => import('./components/HomeScreen').then(m => ({ default: m.HomeScreen })));
-const SettingsScreen = lazy(() => import('./components/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
-const NowPlayingScreen = lazy(() => import('./components/NowPlayingScreen').then(m => ({ default: m.NowPlayingScreen })));
-const SearchScreen = lazy(() => import('./components/SearchScreen').then(m => ({ default: m.SearchScreen })));
-const LibraryScreen = lazy(() => import('./components/LibraryScreen').then(m => ({ default: m.LibraryScreen })));
-const PlanScreen = lazy(() => import('./components/PlanScreen').then(m => ({ default: m.PlanScreen })));
-const PluginsScreen = lazy(() => import('./components/PluginsScreen').then(m => ({ default: m.PluginsScreen })));
+import { HomeScreen } from './components/HomeScreen';
+import { SettingsScreen } from './components/SettingsScreen';
+import { NowPlayingScreen } from './components/NowPlayingScreen';
+import { SearchScreen } from './components/SearchScreen';
+import { LibraryScreen } from './components/LibraryScreen';
+import { PlanScreen } from './components/PlanScreen';
+import { PluginsScreen } from './components/PluginsScreen';
 import { SleepTimerModal } from './components/SleepTimerModal';
 
 import { personalizationService, PersonalizedHomeData } from './services/personalizationService';
@@ -38,6 +38,7 @@ import { authClient } from './services/authClient';
 import { telemetryClient } from './services/telemetryClient';
 import { nativeAudioPlayerService } from './services/nativeAudioPlayerService';
 import { extractAmbientPalette, applyPaletteToDocument } from './utils/colorExtractor';
+import { userLibraryStorage } from './services/userLibraryStorage';
 
 export default function App() {
   const [userName, setUserName] = useState<string>(() => {
@@ -52,26 +53,11 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('home');
   const [activeVideo, setActiveVideo] = useState<MusicVideoItem | null>(null);
   const [favoriteTrackIds, setFavoriteTrackIds] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem('vd_favorite_track_ids');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return new Set(parsed);
-        }
-      }
-    } catch {}
-    return new Set<string>();
+    return userLibraryStorage.getFavoriteTrackIds();
   });
   const [tracks, setTracks] = useState<Track[]>(() => {
-    try {
-      const saved = localStorage.getItem('vd_favorite_track_ids');
-      if (saved) {
-        const favSet = new Set<string>(JSON.parse(saved));
-        return TRACKS.map((t) => ({ ...t, isFavorite: favSet.has(t.id) }));
-      }
-    } catch {}
-    return TRACKS;
+    const favSet = userLibraryStorage.getFavoriteTrackIds();
+    return TRACKS.map((t) => ({ ...t, isFavorite: favSet.has(t.id) }));
   });
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -219,6 +205,28 @@ export default function App() {
 
   const tracksRef = useRef<Track[]>(tracks);
   tracksRef.current = tracks;
+
+  // Persistent Tab Scroll Preservation
+  const mainScrollRef = useRef<HTMLElement | null>(null);
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+  const prevActiveScreenRef = useRef<ActiveScreen>(activeScreen);
+
+  useEffect(() => {
+    const prevScreen = prevActiveScreenRef.current;
+    if (mainScrollRef.current && prevScreen !== activeScreen) {
+      // Save scroll of previous screen before tab switch
+      scrollPositionsRef.current[prevScreen] = mainScrollRef.current.scrollTop;
+      prevActiveScreenRef.current = activeScreen;
+
+      // Restore saved scroll position for the newly active screen
+      const savedScroll = scrollPositionsRef.current[activeScreen] || 0;
+      requestAnimationFrame(() => {
+        if (mainScrollRef.current) {
+          mainScrollRef.current.scrollTop = savedScroll;
+        }
+      });
+    }
+  }, [activeScreen]);
 
   // Real-time synchronization with native media player & ExoPlayer bridge
   useEffect(() => {
@@ -1216,30 +1224,44 @@ export default function App() {
   };
 
   const handleToggleFavorite = (trackId: string) => {
-    let isNowFav = false;
+    let targetTrack = tracks.find((t) => t.id === trackId) ||
+      playbackHistory.find((t) => t.id === trackId) ||
+      userLibraryStorage.getLikedTracks().find((t) => t.id === trackId) ||
+      (currentTrack?.id === trackId ? currentTrack : null);
 
-    setFavoriteTrackIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(trackId)) {
-        next.delete(trackId);
-        isNowFav = false;
-      } else {
-        next.add(trackId);
-        isNowFav = true;
-      }
-      try {
-        localStorage.setItem('vd_favorite_track_ids', JSON.stringify(Array.from(next)));
-      } catch {}
+    if (!targetTrack && activeVideo && activeVideo.videoId === trackId) {
+      targetTrack = {
+        id: `yt-${activeVideo.videoId}`,
+        videoId: activeVideo.videoId,
+        title: activeVideo.title,
+        artist: activeVideo.artist,
+        album: 'YouTube Music',
+        duration: activeVideo.duration,
+        coverUrl: activeVideo.thumbnailUrl,
+        isFavorite: true
+      };
+    }
 
-      // Module 4: Instantly sync liked track to user account database in real-time
-      realtimeSyncService.syncLike(trackId, isNowFav);
-      return next;
-    });
+    if (!targetTrack) {
+      targetTrack = {
+        id: trackId,
+        title: 'Selected Song',
+        artist: 'Streamzy Music',
+        album: 'Favorites',
+        duration: '3:30',
+        coverUrl: '/streamzy_logo.jpg',
+        isFavorite: true
+      };
+    }
+
+    const isNowFav = userLibraryStorage.toggleLike(targetTrack);
+    const newFavSet = userLibraryStorage.getFavoriteTrackIds();
+    setFavoriteTrackIds(newFavSet);
 
     setTracks((prev) => {
       const exists = prev.some((t) => t.id === trackId);
-      if (!exists && currentTrack?.id === trackId) {
-        return [{ ...currentTrack, isFavorite: isNowFav }, ...prev];
+      if (!exists && targetTrack) {
+        return [{ ...targetTrack, isFavorite: isNowFav }, ...prev];
       }
       return prev.map((t) => (t.id === trackId ? { ...t, isFavorite: isNowFav } : t));
     });
@@ -1249,7 +1271,7 @@ export default function App() {
       mediaSessionService.updateFavoriteState(isNowFav);
     }
 
-    // Weighting Algorithm: Record Like/Dislike in taste profile
+    realtimeSyncService.syncLike(trackId, isNowFav);
     personalizationService.toggleLike(trackId, isNowFav);
 
     setPersonalizedHome((prev) => {
@@ -1417,99 +1439,96 @@ export default function App() {
       />
 
       {/* Main Content Area - calculated padding ensures top content naturally merges with the compact header */}
-      <main className="flex-1 w-full overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top,0px)+56px)] pb-36">
+      <main 
+        ref={mainScrollRef}
+        className="flex-1 w-full overflow-y-auto overflow-x-hidden pt-[calc(env(safe-area-inset-top,0px)+56px)] pb-36"
+      >
         {/* Real-time Network Offline & Encrypted Vault Ribbon */}
         <NetworkOfflineBanner onOpenDownloads={() => setActiveScreen('library')} />
 
-        <Suspense fallback={<div className="flex w-full h-full items-center justify-center pt-24"><Loader2 size={36} className="text-red-500 animate-spin" /></div>}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeScreen}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
-              className="w-full min-h-full gpu-layer"
-            >
-              {activeScreen === 'home' && (
-                <HomeScreen
-                  tracks={activeDisplayTracks}
-                  favoriteTrackIds={favoriteTrackIds}
-                  currentTrack={currentTrack}
-                  isPlaying={isPlaying}
-                  personalizedData={personalizedHome || undefined}
-                  playbackHistory={playbackHistory}
-                  userName={userName}
-                  onSelectTrack={handleSelectTrack}
-                  onTogglePlay={handleTogglePlay}
-                  onToggleFavorite={handleToggleFavorite}
-                  onOpenVideo={setActiveVideo}
-                  onPlayMix={handlePlayMix}
-                  onPlayQueue={handlePlayQueue}
-                  onOpenColdStart={() => setIsOnboardingOpen(true)}
-                  onNavigateToSearch={(query, source) => {
-                    if (query !== undefined) setSearchQuery(query);
-                    if (source) setSearchSource(source as any);
-                    setActiveScreen('search');
-                  }}
-                />
-              )}
+        {/* Persistent Tab System - Screens stay mounted and preserve state, scroll and results */}
+        <div className="w-full min-h-full">
+          <div className={activeScreen === 'home' ? 'block w-full min-h-full tab-screen-active' : 'hidden'}>
+            <HomeScreen
+              tracks={activeDisplayTracks}
+              favoriteTrackIds={favoriteTrackIds}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              personalizedData={personalizedHome || undefined}
+              playbackHistory={playbackHistory}
+              userName={userName}
+              onSelectTrack={handleSelectTrack}
+              onTogglePlay={handleTogglePlay}
+              onToggleFavorite={handleToggleFavorite}
+              onOpenVideo={setActiveVideo}
+              onPlayMix={handlePlayMix}
+              onPlayQueue={handlePlayQueue}
+              onOpenColdStart={() => setIsOnboardingOpen(true)}
+              onNavigateToSearch={(query, source) => {
+                if (query !== undefined) setSearchQuery(query);
+                if (source) setSearchSource(source as any);
+                setActiveScreen('search');
+              }}
+            />
+          </div>
 
-              {activeScreen === 'search' && (
-                <SearchScreen
-                  currentTrack={currentTrack}
-                  isPlaying={isPlaying}
-                  onSelectTrack={handleSelectTrack}
-                  onOpenVideo={setActiveVideo}
-                  onPlayMix={handlePlayMix}
-                  onPlayQueue={handlePlayQueue}
-                  initialQuery={searchQuery}
-                  initialSource={searchSource}
-                  onAddToQueue={handleAddToQueue}
-                  onPlayNext={handlePlayNext}
-                  onToggleFavorite={handleToggleFavorite}
-                  favoriteTrackIds={favoriteTrackIds}
-                />
-              )}
+          <div className={activeScreen === 'search' ? 'block w-full min-h-full tab-screen-active' : 'hidden'}>
+            <SearchScreen
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              onSelectTrack={handleSelectTrack}
+              onOpenVideo={setActiveVideo}
+              onPlayMix={handlePlayMix}
+              onPlayQueue={handlePlayQueue}
+              initialQuery={searchQuery}
+              initialSource={searchSource}
+              onAddToQueue={handleAddToQueue}
+              onPlayNext={handlePlayNext}
+              onToggleFavorite={handleToggleFavorite}
+              favoriteTrackIds={favoriteTrackIds}
+            />
+          </div>
 
-              {activeScreen === 'library' && (
-                <LibraryScreen
-                  tracks={activeDisplayTracks}
-                  currentTrack={currentTrack}
-                  isPlaying={isPlaying}
-                  settings={settings}
-                  playbackHistory={playbackHistory}
-                  onClearHistory={handleClearHistory}
-                  onRemoveFromHistory={handleRemoveFromHistory}
-                  onSelectTrack={handleSelectTrack}
-                  onPlayQueue={handlePlayQueue}
-                  onTogglePlay={handleTogglePlay}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              )}
+          <div className={activeScreen === 'library' ? 'block w-full min-h-full tab-screen-active' : 'hidden'}>
+            <LibraryScreen
+              tracks={activeDisplayTracks}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              settings={settings}
+              playbackHistory={playbackHistory}
+              onClearHistory={handleClearHistory}
+              onRemoveFromHistory={handleRemoveFromHistory}
+              onSelectTrack={handleSelectTrack}
+              onPlayQueue={handlePlayQueue}
+              onTogglePlay={handleTogglePlay}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          </div>
 
-              {activeScreen === 'plugins' && (
-                <PluginsScreen />
-              )}
+          <div className={activeScreen === 'plugins' ? 'block w-full min-h-full tab-screen-active' : 'hidden'}>
+            <PluginsScreen />
+          </div>
 
-              {activeScreen === 'settings' && (
-                <SettingsScreen
-                  settings={settings}
-                  onUpdateSettings={handleUpdateSettings}
-                  onBack={() => setActiveScreen('home')}
-                  currentTrack={currentTrack}
-                  isPlaying={isPlaying}
-                  currentTimeSec={currentTimeSec}
-                  onTogglePlay={handleTogglePlay}
-                  onNextTrack={handleNextTrack}
-                  onPrevTrack={handlePrevTrack}
-                  onToggleFavorite={handleToggleFavorite}
-                  onSeek={handleSeek}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </Suspense>
+          <div className={activeScreen === 'plan' ? 'block w-full min-h-full tab-screen-active' : 'hidden'}>
+            <PlanScreen />
+          </div>
+
+          <div className={activeScreen === 'settings' ? 'block w-full min-h-full tab-screen-active' : 'hidden'}>
+            <SettingsScreen
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              onBack={() => setActiveScreen('home')}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              currentTimeSec={currentTimeSec}
+              onTogglePlay={handleTogglePlay}
+              onNextTrack={handleNextTrack}
+              onPrevTrack={handlePrevTrack}
+              onToggleFavorite={handleToggleFavorite}
+              onSeek={handleSeek}
+            />
+          </div>
+        </div>
       </main>
 
       {/* Persistent Mini Player Dock */}
