@@ -482,20 +482,20 @@ const SearchScreenComponent: React.FC<SearchScreenProps> = ({
 
           {/* Streamzy Glass Shimmer Skeleton Loader */}
           {isSearching && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div 
                   key={`search-skeleton-${i}`} 
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] animate-pulse"
+                  className="flex items-center justify-between gap-3 px-3.5 py-3 rounded-2xl liquid-glass border border-white/[0.05]"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/10 shrink-0 shadow-inner" />
+                    <div className="w-12 h-12 rounded-xl skeleton-shimmer shrink-0 shadow-inner" />
                     <div className="flex flex-col gap-2 flex-1 min-w-0">
-                      <div className={`h-4 rounded-lg bg-white/10 ${i % 2 === 0 ? 'w-3/4' : 'w-1/2'}`} />
-                      <div className={`h-3 rounded-md bg-white/5 ${i % 2 === 0 ? 'w-2/5' : 'w-1/3'}`} />
+                      <div className={`h-4 rounded-full skeleton-shimmer ${i % 2 === 0 ? 'w-3/4' : 'w-1/2'}`} />
+                      <div className={`h-3 rounded-full skeleton-shimmer ${i % 2 === 0 ? 'w-2/5' : 'w-1/3'}`} />
                     </div>
                   </div>
-                  <div className="w-10 h-4 rounded-md bg-white/5 shrink-0" />
+                  <div className="w-10 h-3.5 rounded-full skeleton-shimmer shrink-0" />
                 </div>
               ))}
             </div>

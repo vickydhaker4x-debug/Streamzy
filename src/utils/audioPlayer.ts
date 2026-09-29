@@ -626,6 +626,9 @@ export class AudioEngine {
       this.playYouTube(currentTrackObj.videoId);
       return;
     }
+
+    // Fallback stream / backend audio stream for tracks without videoId or offline
+    await this.resolveAndPlayFreshStream(currentTrackObj, reqId);
   }
 
   /**
@@ -947,6 +950,7 @@ export class AudioEngine {
         events: {
           onReady: () => {
             this.isYtReady = true;
+            console.log('[AudioEngine] 🎬 Authoritative YouTube IFrame Player instance READY');
             if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
               this.ytPlayer.setVolume(Math.round(this.volume * 100));
             }
@@ -957,27 +961,87 @@ export class AudioEngine {
             }
           },
           onStateChange: (event: any) => {
-            if (event.data === 1) { // PLAYING
+            const state = event?.data;
+            if (state === 1) { // PLAYING
               this.notifyIsPlaying(true);
               this.notifyBuffering(false);
               this.startYtTracker();
-            } else if (event.data === 0) { // ENDED
+            } else if (state === 0) { // ENDED - authoritative completion
+              console.log('[AudioEngine] 🏁 YouTube track ENDED naturally');
               this.notifyIsPlaying(false);
+              this.notifyBuffering(false);
               this.stopYtTracker();
               if (this.onEndedCallback) {
                 this.onEndedCallback();
               }
-            } else if (event.data === 2) { // PAUSED
+            } else if (state === 2) { // PAUSED
               this.notifyIsPlaying(false);
+              this.notifyBuffering(false);
               this.stopYtTracker();
-            } else if (event.data === 3) { // BUFFERING
+            } else if (state === 3) { // BUFFERING - keep buffering state active, DO NOT treat as ended
+              this.notifyBuffering(true);
+            } else if (state === 5) { // CUED
+              this.notifyBuffering(false);
+            } else if (state === -1) { // UNSTARTED
               this.notifyBuffering(true);
             }
           },
-          onError: (err: any) => {
-            console.warn('[AudioEngine] YouTube Player error:', err);
+          onError: (event: any) => {
+            const errorCode = event?.data;
+            console.warn(`[AudioEngine] ⚠️ YouTube Player Error [Code ${errorCode}]`);
+            let errorMsg = 'YouTube playback error';
+            let isUnplayable = false;
+
+            switch (errorCode) {
+              case 2:
+                errorMsg = 'Invalid YouTube video ID parameter (Error 2)';
+                isUnplayable = true;
+                break;
+              case 5:
+                errorMsg = 'HTML5 player playback failure (Error 5)';
+                break;
+              case 100:
+                errorMsg = 'Video not found or private (Error 100)';
+                isUnplayable = true;
+                break;
+              case 101:
+                errorMsg = 'Playback disallowed in embedded players by content owner (Error 101)';
+                isUnplayable = true;
+                break;
+              case 150:
+                errorMsg = 'Playback restricted in embedded player (Error 150)';
+                isUnplayable = true;
+                break;
+              case 153:
+                errorMsg = 'Playback restricted in this region or embed (Error 153)';
+                isUnplayable = true;
+                break;
+              default:
+                errorMsg = `YouTube player error (${errorCode})`;
+            }
+
             this.stopYtTracker();
-            this.fallbackToNextSource(this.currentActiveTrack);
+            this.notifyBuffering(false);
+
+            if (this.currentActiveTrack) {
+              console.warn(`[AudioEngine] Flagging unplayable track: "${this.currentActiveTrack.title}"`);
+              this.failedStreamUrls.add(this.currentActiveTrack.id);
+              if (this.currentActiveTrack.videoId) {
+                this.failedStreamUrls.add(this.currentActiveTrack.videoId);
+              }
+            }
+
+            if (this.onErrorCallback) {
+              this.onErrorCallback(errorMsg);
+            }
+
+            // If video is permanently unplayable/restricted (100, 101, 150, 153, 2), automatically advance to the next song in the queue
+            if (isUnplayable) {
+              console.log('[AudioEngine] ⏭️ Auto-advancing past restricted/unavailable video to next queue track');
+              if (this.onEndedCallback) {
+                this.onEndedCallback();
+              }
+            }
           }
         }
       });
@@ -991,7 +1055,17 @@ export class AudioEngine {
       console.log('[AudioEngine] Bypassing HTML5 playYouTube because we are in native mode');
       return;
     }
+
+    if (!videoId || typeof videoId !== 'string' || videoId.length < 5) {
+      console.warn('[AudioEngine] Invalid videoId provided to playYouTube:', videoId);
+      if (this.onEndedCallback) {
+        this.onEndedCallback();
+      }
+      return;
+    }
+
     this.currentMode = 'youtube';
+    this.notifyBuffering(true);
     this.fetchSponsorSegments(videoId);
 
     if (this.primaryAudio) {
@@ -999,6 +1073,7 @@ export class AudioEngine {
     }
 
     if (!this.isYtReady || !this.ytPlayer || typeof this.ytPlayer.loadVideoById !== 'function') {
+      console.log(`[AudioEngine] YouTube player instance not ready yet, queuing videoId: ${videoId}`);
       this.pendingVideoId = videoId;
       return;
     }
@@ -1011,11 +1086,12 @@ export class AudioEngine {
       this.applyVolume();
       this.ytPlayer.playVideo();
       this.notifyIsPlaying(true);
-      this.notifyBuffering(false);
       this.startYtTracker();
     } catch (e) {
       console.warn('[AudioEngine] Error playing video in YouTube player:', e);
-      this.fallbackToNextSource(this.currentActiveTrack);
+      if (this.onEndedCallback) {
+        this.onEndedCallback();
+      }
     }
   }
 

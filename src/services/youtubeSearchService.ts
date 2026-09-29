@@ -34,6 +34,14 @@ export interface YouTubeSearchResponse {
   auditLog?: string;
 }
 
+/**
+ * Validates whether a given string is a valid YouTube video ID (11 standard characters)
+ */
+export function isValidYouTubeVideoId(videoId?: string | null): boolean {
+  if (!videoId || typeof videoId !== 'string') return false;
+  return /^[a-zA-Z0-9_-]{11}$/.test(videoId.trim());
+}
+
 const clientSearchCache = new Map<string, { data: YouTubeSearchResponse; timestamp: number }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 

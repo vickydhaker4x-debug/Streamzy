@@ -99,7 +99,7 @@ const TrackImageComponent: FC<TrackImageProps> = ({
     <div className="relative w-full h-full overflow-hidden flex items-center justify-center bg-[#141419]">
       {/* Sleek Shimmer Skeleton while loading non-cached images */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse pointer-events-none flex items-center justify-center">
+        <div className="absolute inset-0 skeleton-shimmer pointer-events-none flex items-center justify-center">
           <span className="material-symbols-outlined text-[18px] text-white/20 animate-spin">
             progress_activity
           </span>

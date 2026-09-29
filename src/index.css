@@ -229,7 +229,7 @@
 
   /* Instant, buttery smooth tab screen appearance with no re-render flicker */
   .tab-screen-active {
-    animation: tabFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: tabFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   @keyframes tabFadeIn {
@@ -241,5 +241,43 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Shimmer Skeleton Loader for seamless loading states */
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite ease-in-out;
+  }
+
+  @keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Interactive tactile press feedback */
+  .tap-press {
+    transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
+  }
+  .tap-press:active {
+    transform: scale(0.96);
+  }
+
+  /* Pulse Heart Animation on favorite toggle */
+  .heart-beat {
+    animation: heartBounce 0.35s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+  }
+
+  @keyframes heartBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  /* Virtual list row performance booster */
+  .list-row-optimized {
+    contain: layout paint style;
+    content-visibility: auto;
+    contain-intrinsic-size: 0 68px;
   }
 }

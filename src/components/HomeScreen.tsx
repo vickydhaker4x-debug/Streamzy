@@ -243,31 +243,31 @@ const HomeScreenComponent: React.FC<HomeScreenProps> = ({
 
       {/* SKELETON PLACEHOLDER WHEN DATA IS INITIALIZING */}
       {homeData.sections.length === 0 && (
-        <div className="flex flex-col space-y-7 px-4 sm:px-6 animate-pulse">
+        <div className="flex flex-col space-y-7 px-4 sm:px-6">
           {/* Skeleton Section 1 */}
           <div className="flex flex-col space-y-3">
-            <div className="w-32 h-3 rounded bg-white/10" />
-            <div className="w-48 h-5 rounded bg-white/15" />
+            <div className="w-32 h-3.5 rounded-full skeleton-shimmer" />
+            <div className="w-48 h-5 rounded-full skeleton-shimmer" />
             <div className="flex gap-4 overflow-hidden pt-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex flex-col space-y-2 w-36 shrink-0">
-                  <div className="w-36 h-36 rounded-2xl bg-white/10" />
-                  <div className="w-28 h-4 rounded bg-white/10" />
-                  <div className="w-20 h-3 rounded bg-white/5" />
+                <div key={i} className="flex flex-col space-y-2.5 w-36 shrink-0">
+                  <div className="w-36 h-36 rounded-2xl skeleton-shimmer" />
+                  <div className="w-28 h-4 rounded-full skeleton-shimmer" />
+                  <div className="w-20 h-3 rounded-full skeleton-shimmer" />
                 </div>
               ))}
             </div>
           </div>
           {/* Skeleton Section 2 */}
           <div className="flex flex-col space-y-3">
-            <div className="w-40 h-5 rounded bg-white/15" />
+            <div className="w-40 h-5 rounded-full skeleton-shimmer" />
             <div className="grid grid-cols-2 gap-3">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-16 rounded-2xl bg-white/5 border border-white/5 flex items-center p-2.5 gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-white/10 shrink-0" />
+                <div key={i} className="h-16 rounded-2xl liquid-glass border border-white/5 flex items-center p-2.5 gap-3">
+                  <div className="w-12 h-12 rounded-xl skeleton-shimmer shrink-0" />
                   <div className="flex flex-col gap-1.5 flex-1">
-                    <div className="w-3/4 h-3.5 rounded bg-white/10" />
-                    <div className="w-1/2 h-3 rounded bg-white/5" />
+                    <div className="w-3/4 h-3.5 rounded-full skeleton-shimmer" />
+                    <div className="w-1/2 h-3 rounded-full skeleton-shimmer" />
                   </div>
                 </div>
               ))}
