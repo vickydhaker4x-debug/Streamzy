@@ -7,7 +7,6 @@ import { audioEngine } from '../utils/audioPlayer';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { MiniPlayer } from '../components/MiniPlayer';
-import { BootSplashScreen } from '../components/BootSplashScreen';
 import { MusicVideoModal } from '../components/MusicVideoModal';
 import { OnboardingModal } from '../components/OnboardingModal';
 import { NetworkOfflineBanner } from "../components/NetworkOfflineBanner";

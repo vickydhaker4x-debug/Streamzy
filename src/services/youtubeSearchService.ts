@@ -1,4 +1,5 @@
 import { Track } from '../types';
+import { detectLanguage } from './musicNormalizationService';
 
 export interface YouTubeSearchResponse {
   status: string;
@@ -367,28 +368,82 @@ class YouTubeSearchService {
   }
 
   /**
-   * Fetches real related tracks matching genre, vibe, and style using YouTube Data API v3
+   * Fetches real related tracks matching exact language, genre, vibe, and style using YouTube Data API v3
    */
   async getSmartRelatedTracks(seedTrack: Track, limit: number = 20): Promise<Track[]> {
     if (!seedTrack) return [];
     const seedArtist = cleanArtist(seedTrack.artist, seedTrack.title);
     const cleanSeedTitle = cleanTitle(seedTrack.title);
+    const targetLang = (seedTrack.language || detectLanguage(seedTrack.title, seedTrack.artist, seedTrack.genre, seedTrack.album)).toLowerCase();
 
-    // Build intelligent stylistic search queries
-    const queries = [
-      `${seedTrack.genre || ''} ${cleanSeedTitle} mix songs`.trim(),
-      `${seedArtist} similar songs playlist`.trim(),
-      `${cleanSeedTitle} radio mix`.trim()
-    ].filter((q) => q.length > 3);
+    // Build intelligent language-anchored stylistic search queries
+    const queries: string[] = [];
+
+    if (targetLang === 'hindi') {
+      queries.push(
+        `${cleanSeedTitle} hindi song`,
+        `${seedArtist} hindi hit songs`,
+        `${cleanSeedTitle} bollywood lofi mix`,
+        `${seedArtist} similar hindi artists playlist`
+      );
+    } else if (targetLang === 'punjabi') {
+      queries.push(
+        `${cleanSeedTitle} punjabi song`,
+        `${seedArtist} punjabi hit songs`,
+        `${seedArtist} punjabi latest mix`
+      );
+    } else if (targetLang === 'tamil') {
+      queries.push(
+        `${cleanSeedTitle} tamil song`,
+        `${seedArtist} tamil hit songs`
+      );
+    } else if (targetLang === 'telugu') {
+      queries.push(
+        `${cleanSeedTitle} telugu song`,
+        `${seedArtist} telugu hit songs`
+      );
+    } else if (targetLang === 'k-pop') {
+      queries.push(
+        `${cleanSeedTitle} kpop song`,
+        `${seedArtist} kpop songs`
+      );
+    } else if (targetLang === 'spanish') {
+      queries.push(
+        `${cleanSeedTitle} spanish song`,
+        `${seedArtist} latin mix`
+      );
+    } else {
+      // English / Western
+      queries.push(
+        `${cleanSeedTitle} ${seedArtist} song`,
+        `${cleanSeedTitle} radio mix pop`,
+        `${seedArtist} similar artists songs`
+      );
+    }
 
     const results: Track[] = [];
+    const seenKeys = new Set<string>();
+
     for (const q of queries) {
       try {
-        const res = await this.search(q, 1, 10);
+        const res = await this.search(q, 1, 12);
         if (res && Array.isArray(res.songs)) {
           for (const s of res.songs) {
             if (s && s.videoId && s.videoId !== seedTrack.videoId && s.id !== seedTrack.id) {
-              results.push(s);
+              // Strict Language Validation: Candidate must match seed language
+              const sLang = (s.language || detectLanguage(s.title, s.artist, s.genre, s.album)).toLowerCase();
+              if (sLang !== targetLang) {
+                continue; // Skip wrong-language songs
+              }
+
+              const key = `${cleanTitle(s.title).toLowerCase()}|${cleanArtist(s.artist, s.title).toLowerCase()}`;
+              if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                results.push({
+                  ...s,
+                  language: s.language || seedTrack.language || targetLang.charAt(0).toUpperCase() + targetLang.slice(1)
+                });
+              }
             }
           }
         }

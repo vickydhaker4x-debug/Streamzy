@@ -64,33 +64,83 @@ export function parsePlayCount(playsText?: string | number): number {
 }
 
 /**
- * Auto-detect primary language from artist, title and genre text
+ * Auto-detect primary language from artist, title, genre and album metadata
+ * Supports strict classification across Hindi, Punjabi, Tamil, Telugu, English, K-Pop, Spanish, etc.
  */
-export function detectLanguage(title = '', artist = '', genre = ''): string {
-  const combined = `${title} ${artist} ${genre}`.toLowerCase();
+export function detectLanguage(title = '', artist = '', genre = '', album = ''): string {
+  const text = `${title} ${artist} ${genre} ${album}`.toLowerCase();
 
-  if (/punjabi|sidhu|dhillon|dosanjh|moosewala|aujla|shubh|amrit|jatt|desihood/i.test(combined)) {
+  // 1. Unicode Script Checks (Definitive Language Markers)
+  if (/[\u0900-\u097F]/.test(text)) {
+    if (/marathi|abhang|natyasangeet|ajay-atul|swapnil/i.test(text)) return 'Marathi';
+    if (/bhojpuri|pawan singh|khesari|shilpi raj/i.test(text)) return 'Bhojpuri';
+    return 'Hindi';
+  }
+  if (/[\u0A00-\u0A7F]/.test(text)) return 'Punjabi';
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'Tamil';
+  if (/[\u0C00-\u0C7F]/.test(text)) return 'Telugu';
+  if (/[\u0D00-\u0D7F]/.test(text)) return 'Malayalam';
+  if (/[\u0C80-\u0CFF]/.test(text)) return 'Kannada';
+  if (/[\u0980-\u09FF]/.test(text)) return 'Bengali';
+  if (/[\uAC00-\uD7AF]/.test(text)) return 'K-Pop';
+  if (/[\u3040-\u30FF]/.test(text)) return 'Japanese';
+  if (/[\u0600-\u06FF]/.test(text)) return 'Urdu';
+
+  // 2. Punjabi Artist & Keyword Match
+  if (
+    /punjabi|sidhu\s*moose|diljit|dosanjh|karan\s*aujla|ap\s*dhillon|gurinder|shubh|amrit\s*maan|b\s*praak|jassi\s*gill|harrdy\s*sandhu|guru\s*randhawa|parmish|gippy|babbu\s*maan|amrinder\s*gill|jasmine\s*sandlas|sunanda|nimrat|jordan\s*sandhu|mankirt|garry\s*sandhu|prem\s*dhillon|wazir\s*patar|tegi\s*pannu|intense|prophec|mickey\s*singh|pav\s*dharia|kulwinder\s*billa|jatt|desihood|bhangra|pind|gabru|sohniya|mitran|gaddi|dhol|punjab|geetmp3|white\s*hill/i.test(
+      text
+    )
+  ) {
     return 'Punjabi';
   }
+
+  // 3. Hindi & Bollywood Artist, Keyword, and Film Label Match
   if (
-    /hindi|arijit|pritam|shreya|jubin|atif|sonu|armaan|bhattacharya|kesariya|tum hi|bhediya|jawan|animal|brahmastra|chaleya|dhadak|t-series|bollywood/i.test(
-      combined
+    /hindi|arijit|pritam|shreya\s*ghoshal|jubin\s*nautiyal|atif\s*aslam|sonu\s*nigam|armaan\s*malik|neha\s*kakkar|mohit\s*chauhan|\bkk\b|vishal[- ]shekhar|sachin[- ]jigar|amit\s*trivedi|alka\s*yagnik|kumar\s*sanu|udit\s*narayan|sunidhi|shankar[- ]ehsaan[- ]loy|mithoon|tanishk|shilpa\s*rao|ankit\s*tiwari|darshan\s*raval|stebin\s*ben|jasleen\s*royal|javed\s*ali|rahat\s*fateh|papon|vishal\s*mishra|rochak\s*kohli|sachet|parampara|palak\s*muchhal|monali\s*thakur|benny\s*dayal|lucky\s*ali|prateek\s*kuhad|anuv\s*jain|aditya\s*rikhari|zaeden|raghav\s*chaitanya|oaff|savera|akull|gajendra\s*verma|kesariya|tum\s*hi|chaleya|apna\s*bana|shayad|agar\s*tum|satranga|raataan|channa|kalank|kabir\s*singh|animal|jawan|brahmastra|dhadak|t-series|zeemusic|saregama|yrf|tips\s*official|sony\s*music\s*india|bollywood|filmi|sufi|ghazal|pyaar|ishq|mohabbat|zindagi|saath|tere|mera|meri|khuda|duniya|sanam|deewana|aankhon|chaahat|hawaale|rang\s*saari|kahani|lutt\s*putt|pehle\s*bhi|sajni|o\s*maahi|ranjha|ve\s*kamleya|naina|taras|tauba\s*tauba/i.test(
+      text
     )
   ) {
     return 'Hindi';
   }
-  if (/tamil|anirudh|ar rahman|ilayaraja|sid sriram|yuvan/i.test(combined)) {
+
+  // 4. Tamil Artist & Keyword Match
+  if (
+    /tamil|kollywood|anirudh|ilayaraja|ilaiyaraaja|yuvan|harris\s*jayaraj|sid\s*sriram|santhosh\s*narayanan|d\s*imman|gv\s*prakash|sean\s*roldan|vijay\s*antony|pradeep\s*kumar|kuthu|kadhal|kaadhal|vaathi|marana|kavithai|unnakaga|thenmozhi|master|leo|jailer|vikram|ponniyin/i.test(
+      text
+    )
+  ) {
     return 'Tamil';
   }
-  if (/telugu|dsp|thaman|keeravani/i.test(combined)) {
+
+  // 5. Telugu Artist & Keyword Match
+  if (
+    /telugu|tollywood|devi\s*sri\s*prasad|\bdsp\b|thaman|keeravani|anurag\s*kulkarni|ram\s*miriyala|mickey\s*j\s*meyer|vivek\s*sagar|prema|ninnu|choodu|samajavaragamana|butta\s*bomma|ala\s*vaikunthapurramuloo|pushpa|rrr|salaar|devara/i.test(
+      text
+    )
+  ) {
     return 'Telugu';
   }
-  if (/kpop|bts|blackpink|stray kids/i.test(combined)) {
+
+  // 6. Malayalam & Kannada
+  if (/malayalam|mollywood|sushin\s*shyam|shaan\s*rahman|heshem|gopi\s*sunder|manjummel|aavesham|premalu/i.test(text)) {
+    return 'Malayalam';
+  }
+  if (/kannada|sandalwood|ravi\s*basrur|charan\s*raj|ajaneesh|kgf|kantara/i.test(text)) {
+    return 'Kannada';
+  }
+
+  // 7. Korean (K-Pop)
+  if (/kpop|k-pop|bts|blackpink|stray\s*kids|twice|newjeans|le\s*sserafim|aespa|seventeen|txt|exo|jungkook|jimin|v\b|agust\s*d|enhypen|itzy/i.test(text)) {
     return 'K-Pop';
   }
-  if (/spanish|bad bunny|rosalia|reggaeton|latin/i.test(combined)) {
+
+  // 8. Spanish / Latin
+  if (/spanish|latin|reggaeton|bad\s*bunny|rosalia|j\s*balvin|maluma|shakira|karol\s*g|ozuna|anuel|daddy\s*yankee|peso\s*pluma|rauw|feid|despacito/i.test(text)) {
     return 'Spanish';
   }
+
+  // 9. Western Pop, Rock, Hip-Hop, Electronic & Indie (English)
   return 'English';
 }
 

@@ -216,20 +216,28 @@ export function detectVibeAndGenre(track: Partial<Track>): { vibe: string; categ
 /**
  * Item-to-Item Content & Collaborative Filtering Similarity Score
  * Computes context matching primarily across: Genre/subgenre, Mood/Vibe, Language, Style/Tempo, and Artist.
- * Emphasizes musical style and mood matching across diverse artists.
+ * Emphasizes musical style and mood matching across diverse artists with strict language alignment.
  */
 export function calculateTrackSimilarity(a: Track, b: Track): number {
   if (areTracksEqual(a, b)) return 1.0;
+
+  const langA = (a.language || detectLanguage(a.title, a.artist, a.genre, a.album)).toLowerCase();
+  const langB = (b.language || detectLanguage(b.title, b.artist, b.genre, b.album)).toLowerCase();
+
+  // Strict Language Rule: Dissimilar languages must never be considered similar in smart queue
+  if (langA !== langB) {
+    return 0.0;
+  }
 
   let similarity = 0;
   const primA = extractPrimaryArtist(a.artist).toLowerCase();
   const primB = extractPrimaryArtist(b.artist).toLowerCase();
 
-  // 1. Same Genre & Vibe Category Match (35% Weight - Primary Driver)
+  // 1. Same Genre & Vibe Category Match (40% Weight - Primary Driver)
   const vibeA = detectVibeAndGenre(a);
   const vibeB = detectVibeAndGenre(b);
   if (vibeA.category === vibeB.category) {
-    similarity += 0.35;
+    similarity += 0.40;
   } else if (
     (vibeA.category === 'bollywood' && vibeB.category === 'chillout') ||
     (vibeA.category === 'punjabi' && vibeB.category === 'hiphop') ||
@@ -237,50 +245,43 @@ export function calculateTrackSimilarity(a: Track, b: Track): number {
     (vibeA.category === 'lofi' && vibeB.category === 'chillout') ||
     (vibeA.category === 'pop' && vibeB.category === 'hiphop')
   ) {
-    similarity += 0.20;
+    similarity += 0.22;
   }
 
-  // 2. Similar Mood / Acoustic energy & Genre tag match (25% Weight)
+  // 2. Similar Mood / Acoustic energy & Genre tag match (30% Weight)
   const genreA = (a.genre || '').toLowerCase();
   const genreB = (b.genre || '').toLowerCase();
   if (genreA && genreB) {
     if (genreA === genreB) {
-      similarity += 0.25;
+      similarity += 0.30;
     } else if (genreA.includes(genreB) || genreB.includes(genreA)) {
-      similarity += 0.18;
+      similarity += 0.20;
     }
   }
 
-  // 3. Language & Cultural Context Continuity (20% Weight)
-  const langA = (a.language || detectLanguage(a.title, a.artist, a.genre)).toLowerCase();
-  const langB = (b.language || detectLanguage(b.title, b.artist, b.genre)).toLowerCase();
-  if (langA === langB) {
-    similarity += 0.20;
-  }
-
-  // 4. Era, Style & Tempo Proximity (10% Weight)
+  // 3. Era, Style & Tempo Proximity (15% Weight)
   const yearA = parseInt(a.releaseYear || a.year || '2024', 10);
   const yearB = parseInt(b.releaseYear || b.year || '2024', 10);
   if (Math.abs(yearA - yearB) <= 3) {
-    similarity += 0.10;
+    similarity += 0.15;
   } else if (Math.abs(yearA - yearB) <= 7) {
-    similarity += 0.05;
+    similarity += 0.08;
   }
 
-  // 5. Artist Match / Collaborators (10% Weight - Moderate, allowing diverse artists to thrive)
+  // 4. Artist Match / Collaborators (15% Weight)
   if (primA === primB) {
-    similarity += 0.10;
+    similarity += 0.15;
   } else if (
     a.artist.toLowerCase().includes(primB) ||
     b.artist.toLowerCase().includes(primA)
   ) {
-    similarity += 0.07;
+    similarity += 0.10;
   } else {
     const relA = new Set((a.relatedArtists || []).map((x) => x.toLowerCase()));
     const relB = new Set((b.relatedArtists || []).map((x) => x.toLowerCase()));
     for (const r of relA) {
       if (relB.has(r) || r === primB || relA.has(primB)) {
-        similarity += 0.05;
+        similarity += 0.08;
         break;
       }
     }
@@ -311,9 +312,9 @@ class PersonalizationService {
 
   /**
    * Intelligently arranges and balances the Up Next queue based on:
-   * 1. Musical Similarity (Genre, Mood/Vibe, Language, Acoustic style)
-   * 2. Diverse Artist Interleaving (ensuring a rich mix of artists with no monotonous repetition)
-   * 3. Seamless transitions between matching tracks
+   * 1. Strict Same-Language Isolation
+   * 2. Musical Similarity (Genre, Mood/Vibe, Acoustic style)
+   * 3. Diverse Artist Interleaving (ensuring a rich mix of artists with no monotonous repetition)
    */
   public prioritizeQueue(
     queueTracks: Track[],
@@ -329,37 +330,45 @@ class PersonalizationService {
       customLockedLanguage ||
       this.lockedLanguage ||
       currentTrack.language ||
-      detectLanguage(currentTrack.title, currentTrack.artist, currentTrack.genre)
+      detectLanguage(currentTrack.title, currentTrack.artist, currentTrack.genre, currentTrack.album)
     ).toLowerCase();
 
+    // 1. Strict Language Filtering: Auto-queue MUST match the playing song's language
+    const sameLanguageTracks = queueTracks.filter((t) => {
+      const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
+      return tLang === effectiveLang;
+    });
+
+    const candidatePool = sameLanguageTracks.length >= 2 ? sameLanguageTracks : queueTracks;
+
     // Score all candidate tracks based on style and mood alignment
-    const scored = queueTracks.map((t) => {
+    const scored = candidatePool.map((t) => {
       const tPrimary = extractPrimaryArtist(t.artist).toLowerCase();
       const tVibe = detectVibeAndGenre(t);
       const tGenre = (t.genre || '').toLowerCase();
-      const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre)).toLowerCase();
+      const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
 
       const isSameGenre = tVibe.category === seedVibe.category || (seedGenre && tGenre && (seedGenre.includes(tGenre) || tGenre.includes(seedGenre)));
-      const isSameLanguage = tLang === effectiveLang;
       const isDifferentArtist = tPrimary !== seedArtist;
 
       const similarity = calculateTrackSimilarity(currentTrack, t);
       const popularity = t.popularity || 50;
 
       // Calculate composite stylistic score
-      let score = similarity * 500 + (popularity * 0.2);
+      let score = similarity * 600 + (popularity * 0.2);
 
-      if (isSameGenre && isSameLanguage) {
-        score += 300;
-      } else if (isSameGenre) {
-        score += 180;
-      } else if (isSameLanguage) {
-        score += 120;
+      if (isSameGenre) {
+        score += 250;
       }
 
-      // Bonus for diverse matching artists to keep the queue fresh and interesting
+      // Bonus for diverse matching artists in the same style
       if (isDifferentArtist && isSameGenre) {
-        score += 50;
+        score += 80;
+      }
+
+      // Heavy penalty if language is mismatched
+      if (tLang !== effectiveLang) {
+        score -= 2000;
       }
 
       return { track: t, score, primaryArtist: tPrimary };
@@ -2228,9 +2237,18 @@ class PersonalizationService {
     context?: PlaybackContext
   ): Track[] {
     const dedupedCatalog = deduplicateTracks(catalog);
-    const candidates = dedupedCatalog.filter(
-      (t) => !areTracksEqual(t, seedTrack) && !this.isDisliked(t.id)
-    );
+    const targetLang = (
+      this.lockedLanguage ||
+      seedTrack.language ||
+      detectLanguage(seedTrack.title, seedTrack.artist, seedTrack.genre, seedTrack.album)
+    ).toLowerCase();
+
+    // Strict Language Gate: Never mix unrelated languages into smart queue
+    const candidates = dedupedCatalog.filter((t) => {
+      if (areTracksEqual(t, seedTrack) || this.isDisliked(t.id)) return false;
+      const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
+      return tLang === targetLang;
+    });
 
     const historyIds = new Set(history.map((t) => t.id));
     const likedIds = new Set(this.profile.likes);
@@ -2262,8 +2280,8 @@ class PersonalizationService {
       const tAlbum = (t.album || '').trim().toLowerCase();
       const tYear = parseInt(t.releaseYear || t.year || '2024', 10);
       
-      // Base Content Similarity (Genre, Mood, Style, Language, Tempo): 0 - 500
-      let score = similarity * 500;
+      // Base Content Similarity (Genre, Mood, Style, Language, Tempo): 0 - 600
+      let score = similarity * 600;
       
       // 1. Primary Genre / Vibe Match (+350)
       if (vibe.category === seedVibe.category) {
@@ -2272,14 +2290,7 @@ class PersonalizationService {
         score += 220;
       }
 
-      // 2. Song Language Continuity (+200)
-      const targetLang = (this.lockedLanguage || seedTrack.language || detectLanguage(seedTrack.title, seedTrack.artist, seedTrack.genre)).toLowerCase();
-      const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre)).toLowerCase();
-      if (tLang === targetLang) {
-        score += 200;
-      }
-
-      // 3. Artist Alignment (Moderate boost for same/collaborating artists, allowing other matching artists to compete)
+      // 2. Artist Alignment (Moderate boost for same/collaborating artists, allowing other matching artists to compete)
       if (tArtist === seedArtist || t.artist.toLowerCase() === seedTrack.artist.toLowerCase()) {
         score += 90;
       } else if (
@@ -2290,12 +2301,12 @@ class PersonalizationService {
         score += 60;
       }
 
-      // 4. Explicit Context Track Match (Remaining tracks from active album/playlist)
+      // 3. Explicit Context Track Match (Remaining tracks from active album/playlist)
       if (contextSourceTrackIds.has(t.id)) {
         score += 150;
       }
 
-      // 4b. Playback Context Artist / Genre alignment
+      // 3b. Playback Context Artist / Genre alignment
       if (contextArtist && (tArtist === contextArtist || t.artist.toLowerCase().includes(contextArtist))) {
         score += 80;
       }
@@ -2303,7 +2314,7 @@ class PersonalizationService {
         score += 45;
       }
 
-      // 5. Same Album & Era Context Match
+      // 4. Same Album & Era Context Match
       if (seedAlbum && tAlbum && seedAlbum === tAlbum) {
         score += 30;
       }
@@ -2311,7 +2322,7 @@ class PersonalizationService {
         score += 15;
       }
 
-      // 6. User-Preferred Songs & Artist Affinities
+      // 5. User-Preferred Songs & Artist Affinities
       if (likedIds.has(t.id)) {
         score += 35; // Direct user favorite boost
       }
@@ -2323,10 +2334,10 @@ class PersonalizationService {
       }
       score += affinity * 0.4; // General affinity vector
 
-      // 7. Popularity & Trending Weighting (Popular related songs)
+      // 6. Popularity & Trending Weighting (Popular related songs)
       score += (t.popularity || 50) * 0.3;
 
-      // 8. Familiarity from long-term history (outside cooldown)
+      // 7. Familiarity from long-term history (outside cooldown)
       if (historyIds.has(t.id)) {
         score += 10;
       }
@@ -2344,7 +2355,7 @@ class PersonalizationService {
   /**
    * Generates a fully personalized YouTube Music style Up-Next queue.
    * Blends instant metadata recommendations with live online radio tracks from YouTube Data API v3 & Invidious,
-   * while preserving musical vibe and enforcing diverse artist distribution.
+   * while preserving musical vibe and enforcing strict language consistency and diverse artist distribution.
    */
   public async generatePersonalizedQueue(
     seedTrack: Track,
@@ -2354,6 +2365,11 @@ class PersonalizationService {
   ): Promise<Track[]> {
     let finalQueue: Track[] = [];
     const isArtistContext = context?.type === 'artist' || Boolean(context?.artist);
+    const targetLang = (
+      this.lockedLanguage ||
+      seedTrack.language ||
+      detectLanguage(seedTrack.title, seedTrack.artist, seedTrack.genre, seedTrack.album)
+    ).toLowerCase();
 
     try {
       const instantQueue = this.getInstantPersonalizedQueue(seedTrack, catalog, history, context);
@@ -2361,7 +2377,7 @@ class PersonalizationService {
       // Concurrently query YouTube Data API v3 smart related songs and related video recommendations
       const livePromises: Promise<Track[]>[] = [];
       
-      // 1. YouTube Data API v3 search for similar stylistic songs & artists
+      // 1. YouTube Data API v3 search for strictly same-language, matching-genre songs
       livePromises.push(
         youtubeSearchService.getSmartRelatedTracks(seedTrack, 15).catch(() => [])
       );
@@ -2382,8 +2398,13 @@ class PersonalizationService {
       }
 
       if (liveTracks.length > 0) {
+        // Strict Language Validation on all live retrieved tracks
         const normalizedRelated = deduplicateTracks(liveTracks.map(normalizeTrack))
-          .filter((t) => !areTracksEqual(t, seedTrack) && !this.isDisliked(t.id));
+          .filter((t) => {
+            if (areTracksEqual(t, seedTrack) || this.isDisliked(t.id)) return false;
+            const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
+            return tLang === targetLang;
+          });
         
         // Interleave live YouTube tracks with instant catalog recommendations
         const combined = deduplicateTracks([...normalizedRelated, ...instantQueue]);
@@ -2398,12 +2419,12 @@ class PersonalizationService {
     // Safety Net: Never return an empty queue if valid catalog items exist.
     if (!finalQueue || finalQueue.length === 0) {
       const popularFallback = deduplicateTracks([...catalog])
-        .filter((t) => !areTracksEqual(t, seedTrack) && !this.isDisliked(t.id))
-        .sort((a, b) => {
-          const popA = a.popularity || 50;
-          const popB = b.popularity || 50;
-          return popB - popA;
+        .filter((t) => {
+          if (areTracksEqual(t, seedTrack) || this.isDisliked(t.id)) return false;
+          const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
+          return tLang === targetLang;
         })
+        .sort((a, b) => (b.popularity || 50) - (a.popularity || 50))
         .slice(0, 20);
         
       return this.prioritizeQueue(popularFallback, seedTrack);

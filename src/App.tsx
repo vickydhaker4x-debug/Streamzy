@@ -8,7 +8,6 @@ import { audioEngine } from './utils/audioPlayer';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { MiniPlayer } from './components/MiniPlayer';
-import { BootSplashScreen } from './components/BootSplashScreen';
 import { MusicVideoModal } from './components/MusicVideoModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { NetworkOfflineBanner } from "./components/NetworkOfflineBanner";
@@ -24,7 +23,7 @@ import { PluginsScreen } from './components/PluginsScreen';
 import { SleepTimerModal } from './components/SleepTimerModal';
 
 import { personalizationService, PersonalizedHomeData } from './services/personalizationService';
-import { getSongDeduplicationKey, areTracksEqual, sanitizeTrackForPersistence } from './services/musicNormalizationService';
+import { getSongDeduplicationKey, areTracksEqual, sanitizeTrackForPersistence, detectLanguage } from './services/musicNormalizationService';
 import { smartShuffle } from './utils/shuffleUtils';
 import { historyService } from './services/historyService';
 import { offlineService } from './services/offlineService';
@@ -461,10 +460,12 @@ export default function App() {
               ...originalQueue.map((t) => getSongDeduplicationKey(t)),
               ...shuffledQueue.map((t) => getSongDeduplicationKey(t))
             ]);
-            const freshTracks = newBatch.filter((t) => 
-              !existingKeys.has(getSongDeduplicationKey(t)) && 
-              !personalizationService.isDisliked(t.id)
-            );
+            const targetLang = (currentTrack.language || detectLanguage(currentTrack.title, currentTrack.artist, currentTrack.genre, currentTrack.album)).toLowerCase();
+            const freshTracks = newBatch.filter((t) => {
+              if (existingKeys.has(getSongDeduplicationKey(t)) || personalizationService.isDisliked(t.id)) return false;
+              const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
+              return tLang === targetLang;
+            });
             if (freshTracks.length > 0) {
               setOriginalQueue((prev) => [...prev, ...freshTracks]);
               if (isShuffle) {
@@ -495,13 +496,19 @@ export default function App() {
     }
   }, [currentTrack?.id]);
 
-  // Initialize personalized home and queue on startup
+  // Initialize personalized home and queue on startup, then dismiss startup loading screen
   useEffect(() => {
     const initialHome = personalizationService.generatePersonalizedHome(TRACKS[0], tracks, playbackHistory, favoriteTrackIds);
     setPersonalizedHome(initialHome);
     setActiveVibe(initialHome.radioVibe);
     setOriginalQueue([]);
     setShuffledQueue([]);
+
+    // Smoothly dismiss the single startup screen once the Home UI is ready in the DOM
+    const t = setTimeout(() => {
+      (window as any).dismissStreamzyStartup?.();
+    }, 120);
+    return () => clearTimeout(t);
   }, []);
 
   // Subscribe to personalization engine changes (likes, dislikes, loops, cold-start)
@@ -922,10 +929,12 @@ export default function App() {
               ...originalQueue.map((t) => getSongDeduplicationKey(t)),
               ...shuffledQueue.map((t) => getSongDeduplicationKey(t))
             ]);
-            const newTracks = moreTracks.filter((t) => 
-              !existingKeys.has(getSongDeduplicationKey(t)) && 
-              !personalizationService.isDisliked(t.id)
-            );
+            const targetLang = (nextTrack.language || detectLanguage(nextTrack.title, nextTrack.artist, nextTrack.genre, nextTrack.album)).toLowerCase();
+            const newTracks = moreTracks.filter((t) => {
+              if (existingKeys.has(getSongDeduplicationKey(t)) || personalizationService.isDisliked(t.id)) return false;
+              const tLang = (t.language || detectLanguage(t.title, t.artist, t.genre, t.album)).toLowerCase();
+              return tLang === targetLang;
+            });
             if (newTracks.length > 0) {
               setOriginalQueue((prev) => [...prev, ...newTracks]);
               if (isShuffle) {
@@ -1684,9 +1693,6 @@ export default function App() {
           }}
         />
       )}
-
-      {/* Animated App Boot Splash Screen */}
-      <BootSplashScreen />
     </div>
   );
 }
