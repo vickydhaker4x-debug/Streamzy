@@ -1688,44 +1688,7 @@ export const FORGOTTEN_FAVORITES: FavoriteItem[] = [
   }
 ];
 
-export const RELATED_ALBUMS: Album[] = [
-  {
-    id: 'alb-1',
-    audioUrl: 'https://aac.saavncdn.com/871/c2febd353f3a076a406fa37510f31f9f_320.mp4',
-    title: 'Brahmastra',
-    artist: 'Pritam & Arijit Singh',
-    year: '2022',
-    coverUrl: 'https://i.ytimg.com/vi/BddP6PYo2gs/mqdefault.jpg',
-    trackCount: 8
-  },
-  {
-    id: 'alb-2',
-    audioUrl: 'https://aac.saavncdn.com/436/891c552669b734899f11db5200127637_320.mp4',
-    title: 'Not by Chance',
-    artist: 'AP Dhillon & Gurinder Gill',
-    year: '2020',
-    coverUrl: 'https://i.ytimg.com/vi/VNs_cCtdbPc/mqdefault.jpg',
-    trackCount: 7
-  },
-  {
-    id: 'alb-3',
-    audioUrl: 'https://aac.saavncdn.com/609/557f6329257e587b276cf1f365037556_320.mp4',
-    title: 'Moosetape',
-    artist: 'Sidhu Moosewala',
-    year: '2021',
-    coverUrl: 'https://i.ytimg.com/vi/n_FCrCQ6-9U/mqdefault.jpg',
-    trackCount: 32
-  },
-  {
-    id: 'alb-4',
-    audioUrl: 'https://aac.saavncdn.com/339/9499404950f0e30022a6c2cb6d92c0e3_320.mp4',
-    title: 'Different World',
-    artist: 'Alan Walker',
-    year: '2018',
-    coverUrl: 'https://i.ytimg.com/vi/60ItHLz5WEA/mqdefault.jpg',
-    trackCount: 15
-  }
-];
+export const RELATED_ALBUMS: Album[] = [];
 
 export const INITIAL_SETTINGS: SettingsState = {
   dynamicColors: true,

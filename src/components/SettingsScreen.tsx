@@ -125,7 +125,7 @@ const SettingsScreenComponent: React.FC<SettingsScreenProps> = ({
       {/* App Info Card */}
       <div className="relative overflow-hidden liquid-glass rounded-2xl p-4 flex items-center justify-between shadow-sm border border-white/[0.04]">
         <div className="flex items-center gap-3.5 min-w-0">
-          <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-md shrink-0 border border-white/10 bg-black">
+          <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-md shrink-0">
             <img 
               src="/streamzy_logo.jpg" 
               alt="Streamzy" 

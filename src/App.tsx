@@ -59,7 +59,38 @@ export default function App() {
     const favSet = userLibraryStorage.getFavoriteTrackIds();
     return TRACKS.map((t) => ({ ...t, isFavorite: favSet.has(t.id) }));
   });
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
+    try {
+      const saved = localStorage.getItem('vd_last_played_track_v1');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {}
+    return null;
+  });
+
+  // Persist last played track
+  useEffect(() => {
+    if (currentTrack) {
+      try {
+        localStorage.setItem('vd_last_played_track_v1', JSON.stringify(sanitizeTrackForPersistence(currentTrack)));
+      } catch {}
+    }
+  }, [currentTrack]);
+
+  // Subscribe to userLibraryStorage changes for continuous sync
+  useEffect(() => {
+    const unsub = userLibraryStorage.subscribe(() => {
+      const favs = userLibraryStorage.getFavoriteTrackIds();
+      setFavoriteTrackIds(favs);
+      setTracks((prev) => prev.map((t) => ({ ...t, isFavorite: favs.has(t.id) })));
+      if (currentTrackRef.current) {
+        const isFav = favs.has(currentTrackRef.current.id);
+        setCurrentTrack((prev) => (prev ? { ...prev, isFavorite: isFav } : null));
+      }
+    });
+    return unsub;
+  }, []);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTimeSec, setCurrentTimeSec] = useState<number>(0);
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState<boolean>(false);
@@ -125,8 +156,24 @@ export default function App() {
   }, [currentTrack?.id, currentTrack?.coverUrl, currentTrack?.title, settings.pureBlackAmoled]);
 
   // YouTube Music / Spotify-Style Personalization State
-  const [originalQueue, setOriginalQueue] = useState<Track[]>([]);
+  const [originalQueue, setOriginalQueue] = useState<Track[]>(() => {
+    try {
+      const saved = localStorage.getItem('vd_active_queue_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [shuffledQueue, setShuffledQueue] = useState<Track[]>([]);
+
+  // Persist originalQueue
+  useEffect(() => {
+    try {
+      localStorage.setItem('vd_active_queue_v1', JSON.stringify(originalQueue.map((t) => sanitizeTrackForPersistence(t))));
+    } catch {}
+  }, [originalQueue]);
   const [isShuffle, setIsShuffle] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('vd_is_shuffle');

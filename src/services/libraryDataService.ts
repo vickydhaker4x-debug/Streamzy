@@ -1,5 +1,4 @@
 import { Track, Album, Artist } from '../types';
-import { RELATED_ALBUMS } from '../data/musicData';
 
 export interface EnrichedAlbum extends Album {
   tracks: Track[];
@@ -97,52 +96,6 @@ export function extractAlbums(tracks: Track[]): EnrichedAlbum[] {
     const entry = albumMap.get(key)!;
     if (!entry.tracks.some((t) => t.id === track.id)) {
       entry.tracks.push(track);
-    }
-  });
-
-  // 2. Incorporate predefined RELATED_ALBUMS metadata and link all corresponding artist tracks
-  RELATED_ALBUMS.forEach((rel) => {
-    const key = rel.title.trim().toLowerCase();
-    const existing = albumMap.get(key);
-
-    // Identify artists from rel.artist split
-    const artistParts = rel.artist.split(/[,&/|]/).map((s) => s.trim().toLowerCase()).filter(Boolean);
-
-    if (existing) {
-      existing.album = {
-        ...existing.album,
-        coverUrl: rel.coverUrl || existing.album.coverUrl,
-        year: rel.year || existing.album.year,
-        artist: rel.artist || existing.album.artist
-      };
-      // Supplement with any artist matching tracks if existing has very few tracks
-      if (existing.tracks.length < 3) {
-        tracks.forEach((t) => {
-          if (!existing.tracks.some((et) => et.id === t.id)) {
-            const matchesArtist = artistParts.some((ap) => t.artist.toLowerCase().includes(ap));
-            const matchesAlbum = (t.album || '').toLowerCase().includes(key);
-            if (matchesAlbum || matchesArtist) {
-              existing.tracks.push(t);
-            }
-          }
-        });
-      }
-    } else {
-      // Find tracks matching album title or artists
-      const matchingTracks = tracks.filter((t) => {
-        const tAlb = (t.album || '').toLowerCase();
-        const tTitle = t.title.toLowerCase();
-        const matchesAlb = tAlb.includes(key) || tTitle.includes(key);
-        const matchesArtist = artistParts.some((ap) => t.artist.toLowerCase().includes(ap));
-        return matchesAlb || matchesArtist;
-      });
-
-      if (matchingTracks.length > 0) {
-        albumMap.set(key, {
-          album: rel,
-          tracks: matchingTracks
-        });
-      }
     }
   });
 

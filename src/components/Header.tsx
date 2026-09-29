@@ -43,7 +43,7 @@ const HeaderComponent: React.FC<HeaderProps> = ({
       <div className="h-14 px-4 sm:px-6 flex items-center justify-between gap-3 max-w-5xl mx-auto">
         {/* Logo and Brand Title */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/10 flex items-center justify-center bg-zinc-950 shadow-[0_0_12px_rgba(217,70,239,0.2)] group cursor-pointer">
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-[0_0_12px_rgba(254,56,94,0.25)] group cursor-pointer">
             <img
               src="/streamzy_logo.jpg"
               alt="Streamzy"

@@ -22,7 +22,7 @@ import {
 import { Track, SettingsState, Playlist } from '../types';
 import { sanitizeTrackForPersistence } from '../services/musicNormalizationService';
 import { TrackImage } from './TrackImage';
-import { extractAlbums, extractArtists, EnrichedAlbum, EnrichedArtist } from '../services/libraryDataService';
+import { extractAlbums, extractArtists, normalizeAlbumTitle, formatTotalDuration, EnrichedAlbum, EnrichedArtist } from '../services/libraryDataService';
 import { offlineService } from '../services/offlineService';
 import { AlbumDetailView } from './library/AlbumDetailView';
 import { ArtistDetailView } from './library/ArtistDetailView';
@@ -150,50 +150,47 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
     return Array.from(map.values());
   }, [tracks, serviceTick]);
 
-  // Extract albums and artists from all library tracks & persistent saved items
-  const derivedAlbums = useMemo(() => extractAlbums(tracks), [tracks]);
-  const derivedArtists = useMemo(() => extractArtists(tracks, derivedAlbums), [tracks, derivedAlbums]);
-
+  // Albums in library: only actual user-saved albums / API data (empty on first launch)
   const albums = useMemo(() => {
-    const map = new Map<string, EnrichedAlbum>();
-    derivedAlbums.forEach((a) => map.set(a.id, a));
-    savedAlbums.forEach((sa) => {
-      if (!map.has(sa.id)) {
-        map.set(sa.id, {
-          id: sa.id,
-          title: sa.title,
-          artist: sa.artist,
-          year: sa.year || '2024',
-          coverUrl: sa.coverUrl,
-          trackCount: 1,
-          tracks: [],
-          totalSec: 210,
-          totalDuration: '3:30'
-        });
-      }
+    return savedAlbums.map((sa) => {
+      const normTarget = normalizeAlbumTitle(sa.title).toLowerCase();
+      const albTracks = tracks.filter((t) => {
+        const tNorm = normalizeAlbumTitle(t.album || '', t.title).toLowerCase();
+        return tNorm === normTarget || (sa.artist && t.artist.toLowerCase().includes(sa.artist.toLowerCase()));
+      });
+      const totalSec = albTracks.reduce((sum, t) => sum + (t.durationSec || 200), 0);
+      return {
+        id: sa.id,
+        title: sa.title,
+        artist: sa.artist,
+        year: sa.year || '2024',
+        coverUrl: sa.coverUrl || (albTracks[0]?.coverUrl) || '/streamzy_logo.jpg',
+        trackCount: albTracks.length || 1,
+        tracks: albTracks,
+        totalSec: totalSec || 210,
+        totalDuration: albTracks.length > 0 ? formatTotalDuration(totalSec) : '3:30'
+      };
     });
-    return Array.from(map.values());
-  }, [derivedAlbums, savedAlbums]);
+  }, [savedAlbums, tracks]);
 
+  // Artists in library: only actual user-saved artists / API data (empty on first launch)
   const artists = useMemo(() => {
-    const map = new Map<string, EnrichedArtist>();
-    derivedArtists.forEach((ar) => map.set(ar.id, ar));
-    savedArtists.forEach((sa) => {
-      if (!map.has(sa.id)) {
-        map.set(sa.id, {
-          id: sa.id,
-          name: sa.name,
-          avatarUrl: sa.avatarUrl,
-          trackCount: 1,
-          albumCount: 1,
-          genres: [],
-          tracks: [],
-          albums: []
-        });
-      }
+    return savedArtists.map((sa) => {
+      const artTracks = tracks.filter((t) =>
+        t.artist.toLowerCase().includes(sa.name.toLowerCase())
+      );
+      return {
+        id: sa.id,
+        name: sa.name,
+        avatarUrl: sa.avatarUrl || (artTracks[0]?.coverUrl) || '/streamzy_logo.jpg',
+        trackCount: artTracks.length,
+        albumCount: 1,
+        genres: [],
+        tracks: artTracks,
+        albums: []
+      };
     });
-    return Array.from(map.values());
-  }, [derivedArtists, savedArtists]);
+  }, [savedArtists, tracks]);
 
   const handleToggleSaveAlbum = (album: EnrichedAlbum, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -546,103 +543,127 @@ const LibraryScreenComponent: React.FC<LibraryScreenProps> = ({
         <div id="albums-section-grid" className="flex flex-col gap-4 animate-fade-in">
           <div className="flex items-center justify-between px-1">
             <span className="text-[12px] uppercase font-bold tracking-wider text-[#a1a1aa]">
-              All Albums ({albums.length})
+              Saved Albums ({albums.length})
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-            {albums.map((alb) => {
-              const isSaved = userLibraryStorage.isAlbumSaved(alb.id);
-              return (
-                <div
-                  key={alb.id}
-                  id={`album-card-${alb.id}`}
-                  onClick={() => setActiveAlbumDetail(alb)}
-                  className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-3 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col relative"
-                >
-                  <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-2.5 liquid-glass-heavy shadow-md">
-                    <TrackImage
-                      src={alb.coverUrl}
-                      videoId={alb.tracks[0]?.videoId}
-                      alt={alb.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <button
-                      onClick={(e) => handleToggleSaveAlbum(alb, e)}
-                      title={isSaved ? 'Remove from Saved Albums' : 'Save Album'}
-                      className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
-                        isSaved ? 'bg-[var(--color-primary)] text-white shadow-md' : 'bg-black/40 text-white/70 hover:text-white'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[15px]">
-                        {isSaved ? 'bookmark' : 'bookmark_border'}
-                      </span>
-                    </button>
+          {albums.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center px-4 liquid-glass rounded-3xl border border-white/[0.05]">
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-4 text-[var(--color-primary)]">
+                <Disc3 size={32} />
+              </div>
+              <h3 className="text-base font-bold text-[#e4e1e7] mb-1">No albums yet</h3>
+              <p className="text-xs text-[#a1a1aa] max-w-xs leading-relaxed">
+                Save albums from search or when exploring music to see them in your library.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+              {albums.map((alb) => {
+                const isSaved = userLibraryStorage.isAlbumSaved(alb.id);
+                return (
+                  <div
+                    key={alb.id}
+                    id={`album-card-${alb.id}`}
+                    onClick={() => setActiveAlbumDetail(alb)}
+                    className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-3 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col relative"
+                  >
+                    <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-2.5 liquid-glass-heavy shadow-md">
+                      <TrackImage
+                        src={alb.coverUrl}
+                        videoId={alb.tracks[0]?.videoId}
+                        alt={alb.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <button
+                        onClick={(e) => handleToggleSaveAlbum(alb, e)}
+                        title={isSaved ? 'Remove from Saved Albums' : 'Save Album'}
+                        className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
+                          isSaved ? 'bg-[var(--color-primary)] text-white shadow-md' : 'bg-black/40 text-white/70 hover:text-white'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[15px]">
+                          {isSaved ? 'bookmark' : 'bookmark_border'}
+                        </span>
+                      </button>
+                    </div>
+                    <h3 className="font-bold text-[13px] text-[#e4e1e7] truncate group-hover:text-[var(--color-primary)] transition-colors">
+                      {alb.title}
+                    </h3>
+                    <span className="text-[12px] text-[#a1a1aa] truncate mt-0.5">{alb.artist}</span>
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#71717a] mt-1">
+                      <span>{alb.year}</span>
+                      <span>•</span>
+                      <span>{alb.trackCount} {alb.trackCount === 1 ? 'song' : 'songs'}</span>
+                    </div>
                   </div>
-                  <h3 className="font-bold text-[13px] text-[#e4e1e7] truncate group-hover:text-[var(--color-primary)] transition-colors">
-                    {alb.title}
-                  </h3>
-                  <span className="text-[12px] text-[#a1a1aa] truncate mt-0.5">{alb.artist}</span>
-                  <div className="flex items-center gap-1.5 text-[11px] text-[#71717a] mt-1">
-                    <span>{alb.year}</span>
-                    <span>•</span>
-                    <span>{alb.trackCount} {alb.trackCount === 1 ? 'song' : 'songs'}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : activeTab === 'artists' ? (
         /* 6. Artists Grid */
         <div id="artists-section-grid" className="flex flex-col gap-4 animate-fade-in">
           <div className="flex items-center justify-between px-1">
             <span className="text-[12px] uppercase font-bold tracking-wider text-[#a1a1aa]">
-              Artists in Library ({artists.length})
+              Saved Artists ({artists.length})
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
-            {artists.map((artist) => {
-              const isSaved = userLibraryStorage.isArtistSaved(artist.id);
-              return (
-                <div
-                  key={artist.id}
-                  id={`artist-card-${artist.id}`}
-                  onClick={() => setActiveArtistDetail(artist)}
-                  className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-4 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col items-center text-center relative"
-                >
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 liquid-glass-heavy shadow-md ring-2 ring-white/10 group-hover:ring-[var(--color-primary)] transition-all">
-                    <TrackImage
-                      src={artist.avatarUrl}
-                      videoId={artist.tracks[0]?.videoId}
-                      alt={artist.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <button
-                      onClick={(e) => handleToggleSaveArtist(artist, e)}
-                      title={isSaved ? 'Unfollow Artist' : 'Follow Artist'}
-                      className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
-                        isSaved ? 'bg-[var(--color-primary)] text-white shadow-md' : 'bg-black/60 text-white/70 hover:text-white'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[13px]">
-                        {isSaved ? 'check' : 'add'}
-                      </span>
-                    </button>
+          {artists.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center px-4 liquid-glass rounded-3xl border border-white/[0.05]">
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-4 text-[var(--color-primary)]">
+                <User size={32} />
+              </div>
+              <h3 className="text-base font-bold text-[#e4e1e7] mb-1">No artists yet</h3>
+              <p className="text-xs text-[#a1a1aa] max-w-xs leading-relaxed">
+                Follow or save your favorite artists to easily find their discography here.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+              {artists.map((artist) => {
+                const isSaved = userLibraryStorage.isArtistSaved(artist.id);
+                return (
+                  <div
+                    key={artist.id}
+                    id={`artist-card-${artist.id}`}
+                    onClick={() => setActiveArtistDetail(artist)}
+                    className="liquid-glass hover:bg-white/[0.1] hover:border-white/[0.15] hover:shadow-[0_12px_24px_0_rgba(0,0,0,0.3)] hover:scale-105 p-4 rounded-2xl border border-white/[0.04] cursor-pointer group transition-all flex flex-col items-center text-center relative"
+                  >
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 liquid-glass-heavy shadow-md ring-2 ring-white/10 group-hover:ring-[var(--color-primary)] transition-all">
+                      <TrackImage
+                        src={artist.avatarUrl}
+                        videoId={artist.tracks[0]?.videoId}
+                        alt={artist.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <button
+                        onClick={(e) => handleToggleSaveArtist(artist, e)}
+                        title={isSaved ? 'Unfollow Artist' : 'Follow Artist'}
+                        className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
+                          isSaved ? 'bg-[var(--color-primary)] text-white shadow-md' : 'bg-black/60 text-white/70 hover:text-white'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[13px]">
+                          {isSaved ? 'check' : 'add'}
+                        </span>
+                      </button>
+                    </div>
+
+                    <h3 className="font-bold text-[14px] text-[#e4e1e7] truncate w-full group-hover:text-[var(--color-primary)] transition-colors">
+                      {artist.name}
+                    </h3>
+
+                    <span className="text-[11px] text-[#a1a1aa] mt-0.5">
+                      {artist.trackCount} tracks • {artist.albumCount} {artist.albumCount === 1 ? 'album' : 'albums'}
+                    </span>
                   </div>
-
-                  <h3 className="font-bold text-[14px] text-[#e4e1e7] truncate w-full group-hover:text-[var(--color-primary)] transition-colors">
-                    {artist.name}
-                  </h3>
-
-                  <span className="text-[11px] text-[#a1a1aa] mt-0.5">
-                    {artist.trackCount} tracks • {artist.albumCount} {artist.albumCount === 1 ? 'album' : 'albums'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : activeTab === 'history' ? (
         /* 8. History & Recent Activity Section */

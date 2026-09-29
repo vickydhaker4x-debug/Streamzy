@@ -32,11 +32,11 @@ export const PlanScreen: React.FC<PlanScreenProps> = ({ onComplete }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Streamzy Logo */}
-        <div className="w-16 h-16 sm:w-20 sm:h-20 mb-5 rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_24px_rgba(248,113,113,0.25)] border border-white/10 p-1 flex items-center justify-center bg-black shrink-0">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 mb-5 rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_0_24px_rgba(254,56,94,0.3)] shrink-0">
           <img 
             alt="Streamzy" 
             src="/streamzy_logo.jpg" 
-            className="w-full h-full object-cover rounded-[14px] sm:rounded-[20px]" 
+            className="w-full h-full object-cover" 
           />
         </div>
         

@@ -5,16 +5,15 @@ import sharp from 'sharp';
 const ROOT_DIR = process.cwd();
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
-// Symmetrical Modern Streamzy Audio Waveform Icon SVG (512x512)
+// Perfectly Centered, Clean Streamzy Waveform Icon without any border/outline (512x512)
 const LOGO_SVG = `
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Dark Squircle Background -->
-  <rect x="24" y="24" width="464" height="464" rx="112" fill="#141318"/>
-  <rect x="24" y="24" width="464" height="464" rx="112" stroke="#25242F" stroke-width="8"/>
+  <!-- Clean Dark Background (No border / No outline) -->
+  <rect width="512" height="512" rx="112" fill="#141318"/>
   
-  <!-- Symmetrical Modern Waveform Bars -->
+  <!-- Symmetrical Modern Waveform Bars (Center Y: 256, Exact Horizontal Symmetry) -->
   <!-- 1. Left Outer Bar -->
-  <rect x="116" y="216" width="36" height="80" rx="18" fill="#FE385E"/>
+  <rect x="118" y="216" width="36" height="80" rx="18" fill="#FE385E"/>
   
   <!-- 2. Left Inner Bar -->
   <rect x="178" y="156" width="36" height="200" rx="18" fill="#FE385E"/>
@@ -26,12 +25,12 @@ const LOGO_SVG = `
   <rect x="298" y="156" width="36" height="200" rx="18" fill="#FE385E"/>
   
   <!-- 5. Right Outer Bar -->
-  <rect x="360" y="216" width="36" height="80" rx="18" fill="#FE385E"/>
+  <rect x="358" y="216" width="36" height="80" rx="18" fill="#FE385E"/>
 </svg>
 `;
 
 async function buildLogos() {
-  console.log('Generating crisp modern Streamzy logo assets...');
+  console.log('Generating perfectly aligned clean Streamzy logo assets...');
   
   // Save SVG
   fs.writeFileSync(path.join(PUBLIC_DIR, 'streamzy_logo.svg'), LOGO_SVG, 'utf8');
@@ -51,7 +50,7 @@ async function buildLogos() {
     .jpeg({ quality: 98 })
     .toFile(path.join(PUBLIC_DIR, 'streamzy_logo.jpg'));
 
-  // Also update vd_music_logo.jpg for backwards compatibility
+  // Update vd_music_logo.jpg
   await sharp(svgBuffer, { density: 300 })
     .resize(1024, 1024)
     .jpeg({ quality: 98 })
@@ -75,7 +74,7 @@ async function buildLogos() {
     .png()
     .toFile(path.join(PUBLIC_DIR, 'apple-touch-icon.png'));
 
-  // Maskable Icon (512x512 with safe area)
+  // Maskable Icon (512x512 with safe margin)
   const innerMaskable = await sharp(svgBuffer, { density: 300 })
     .resize(380, 380)
     .png()
@@ -93,7 +92,7 @@ async function buildLogos() {
     .png()
     .toFile(path.join(PUBLIC_DIR, 'icon-maskable.png'));
 
-  console.log('Web & PWA logo assets generated successfully!');
+  console.log('Clean logo assets successfully generated!');
 }
 
 buildLogos().catch(console.error);

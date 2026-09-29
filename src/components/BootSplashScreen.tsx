@@ -9,11 +9,6 @@ export const BootSplashScreen: React.FC<BootSplashScreenProps> = ({ onComplete }
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Dismiss HTML-level splash immediately since React has mounted
-    if (typeof window !== 'undefined' && (window as any).dismissStreamzyBootSplash) {
-      (window as any).dismissStreamzyBootSplash();
-    }
-
     const t1 = setTimeout(() => {
       setIsVisible(false);
     }, 1200);
@@ -48,7 +43,7 @@ export const BootSplashScreen: React.FC<BootSplashScreenProps> = ({ onComplete }
               transition={{
                 duration: 2, repeat: Infinity, ease: 'easeInOut'
               }}
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-[22px] overflow-hidden shadow-2xl bg-black/20 border border-white/5"
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-[22px] overflow-hidden shadow-2xl"
             >
               <img
                 src="/streamzy_logo.jpg"
