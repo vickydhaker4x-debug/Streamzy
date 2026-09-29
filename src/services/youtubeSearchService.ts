@@ -365,6 +365,39 @@ class YouTubeSearchService {
   clearCache() {
     clientSearchCache.clear();
   }
+
+  /**
+   * Fetches real related tracks matching genre, vibe, and style using YouTube Data API v3
+   */
+  async getSmartRelatedTracks(seedTrack: Track, limit: number = 20): Promise<Track[]> {
+    if (!seedTrack) return [];
+    const seedArtist = cleanArtist(seedTrack.artist, seedTrack.title);
+    const cleanSeedTitle = cleanTitle(seedTrack.title);
+
+    // Build intelligent stylistic search queries
+    const queries = [
+      `${seedTrack.genre || ''} ${cleanSeedTitle} mix songs`.trim(),
+      `${seedArtist} similar songs playlist`.trim(),
+      `${cleanSeedTitle} radio mix`.trim()
+    ].filter((q) => q.length > 3);
+
+    const results: Track[] = [];
+    for (const q of queries) {
+      try {
+        const res = await this.search(q, 1, 10);
+        if (res && Array.isArray(res.songs)) {
+          for (const s of res.songs) {
+            if (s && s.videoId && s.videoId !== seedTrack.videoId && s.id !== seedTrack.id) {
+              results.push(s);
+            }
+          }
+        }
+      } catch {}
+      if (results.length >= limit) break;
+    }
+
+    return results.slice(0, limit);
+  }
 }
 
 export const youtubeSearchService = new YouTubeSearchService();
